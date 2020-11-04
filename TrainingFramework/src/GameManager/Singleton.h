@@ -12,6 +12,13 @@ public:
 		return s_instance;
 	}
 
+	static std::shared_ptr<T> GetInstance(int id)
+	{
+		if (s_instance == 0)
+			s_instance = std::make_shared<T>(id);
+		return s_instance;
+	}
+
 	static bool HasInstance()
 	{
 		return s_instance != 0;

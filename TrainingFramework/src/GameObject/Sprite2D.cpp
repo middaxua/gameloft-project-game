@@ -82,7 +82,6 @@ void Sprite2D::Draw()
 			glUniform4f(iTempShaderVaribleGLID, m_Color.x, m_Color.y, m_Color.z, m_Color.w);
 	}
 
-
 	iTempShaderVaribleGLID = -1;
 	iTempShaderVaribleGLID = m_pShader->GetAttribLocation((char*)"a_posL");
 	if (iTempShaderVaribleGLID != -1)

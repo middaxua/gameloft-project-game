@@ -269,10 +269,13 @@
     <ClCompile Include="src\GameObject\Sprite3D.cpp" />
     <ClCompile Include="src\GameObject\Models.cpp" />
     <ClCompile Include="src\GameObject\Shaders.cpp" />
+    <ClCompile Include="src\GameObject\SpriteAnimation.cpp" />
     <ClCompile Include="src\GameObject\Text.cpp" />
     <ClCompile Include="src\GameObject\Texture.cpp" />
+    <ClCompile Include="src\GameStates\CharacterState.cpp" />
     <ClCompile Include="src\GameStates\GameStatebase.cpp" />
     <ClCompile Include="src\GameStates\GameStateMachine.cpp" />
+    <ClCompile Include="src\GameStates\GSCredit.cpp" />
     <ClCompile Include="src\GameStates\GSIntro.cpp" />
     <ClCompile Include="src\GameStates\GSMenu.cpp" />
     <ClCompile Include="src\GameStates\GSPlay.cpp" />
@@ -291,10 +294,13 @@
     <ClInclude Include="src\GameObject\Sprite3D.h" />
     <ClInclude Include="src\GameObject\Models.h" />
     <ClInclude Include="src\GameObject\Shaders.h" />
+    <ClInclude Include="src\GameObject\SpriteAnimation.h" />
     <ClInclude Include="src\GameObject\Text.h" />
     <ClInclude Include="src\GameObject\Texture.h" />
+    <ClInclude Include="src\GameStates\CharacterState.h" />
     <ClInclude Include="src\GameStates\GameStatebase.h" />
     <ClInclude Include="src\GameStates\GameStateMachine.h" />
+    <ClInclude Include="src\GameStates\GSCredit.h" />
     <ClInclude Include="src\GameStates\GSIntro.h" />
     <ClInclude Include="src\GameStates\GSMenu.h" />
     <ClInclude Include="src\GameStates\GSPlay.h" />

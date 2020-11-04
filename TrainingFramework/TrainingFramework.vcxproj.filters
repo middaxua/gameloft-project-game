@@ -69,6 +69,9 @@
     <ClCompile Include="src\GameObject\GameButton.cpp">
       <Filter>TrainingFramework\src\GameObject</Filter>
     </ClCompile>
+    <ClCompile Include="src\GameObject\SpriteAnimation.cpp" />
+    <ClCompile Include="src\GameStates\CharacterState.cpp" />
+    <ClCompile Include="src\GameStates\GSCredit.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Application.h">
@@ -128,6 +131,9 @@
     <ClInclude Include="src\GameObject\GameButton.h">
       <Filter>TrainingFramework\src\GameObject</Filter>
     </ClInclude>
+    <ClInclude Include="src\GameObject\SpriteAnimation.h" />
+    <ClInclude Include="src\GameStates\CharacterState.h" />
+    <ClInclude Include="src\GameStates\GSCredit.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram.cd" />

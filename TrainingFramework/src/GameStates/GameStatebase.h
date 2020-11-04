@@ -26,7 +26,5 @@ public:
 	}*/
 
 	static std::shared_ptr<GameStateBase> CreateState(StateTypes stt);
-	
-
 };
 

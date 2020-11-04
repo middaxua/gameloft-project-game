@@ -8,6 +8,9 @@
 #include "Sprite2D.h"
 #include "Sprite3D.h"
 #include "Text.h"
+#include "SpriteAnimation.h"
+#include "GameButton.h"
+#include "CharacterState.h"
 
 extern int screenWidth; //need get on Graphic engine
 extern int screenHeight; //need get on Graphic engine
@@ -26,13 +29,13 @@ GSPlay::~GSPlay()
 void GSPlay::Init()
 {
 	auto model = ResourceManagers::GetInstance()->GetModel("Sprite2D");
-	auto texture = ResourceManagers::GetInstance()->GetTexture("bg_play");
+	auto texture = ResourceManagers::GetInstance()->GetTexture("bg_game");
 
 	//BackGround
 	auto shader = ResourceManagers::GetInstance()->GetShader("TextureShader");
 	m_BackGround = std::make_shared<Sprite2D>(model, shader, texture);
 	m_BackGround->Set2DPosition(screenWidth / 2, screenHeight / 2);
-	m_BackGround->SetSize(screenWidth, screenHeight);
+	m_BackGround->SetSize(MAP_WIDTH, MAP_HEIGHT);
 
 	//button back
 	texture = ResourceManagers::GetInstance()->GetTexture("button_back");
@@ -40,29 +43,28 @@ void GSPlay::Init()
 	button->Set2DPosition(200, 100);
 	button->SetSize(200, 50);
 	button->SetOnClick([]() {
-		GameStateMachine::GetInstance()->ChangeState(StateTypes::STATE_Menu);
+		GameStateMachine::GetInstance()->PopState();
 	});
 	m_listButton.push_back(button);
 
-	//object rock
-	texture = ResourceManagers::GetInstance()->GetTexture("Rock");
-	std::shared_ptr<Sprite2D> rock = std::make_shared<Sprite2D>(model, shader, texture);
-	rock->Set2DPosition(200, 300);
-	rock->SetSize(50, 50);
-	m_listObject.push_back(rock);
-
-	//object grass
-	texture = ResourceManagers::GetInstance()->GetTexture("Grass");
-	std::shared_ptr<Sprite2D> grass = std::make_shared<Sprite2D>(model, shader, texture);
-	grass->Set2DPosition(200, 400);
-	grass->SetSize(50, 50);
-	m_listObject.push_back(grass);
+	//button skill
+	texture = ResourceManagers::GetInstance()->GetTexture("button_archer_skill");
+	button = std::make_shared<GameButton>(model, shader, texture);
+	button->Set2DPosition(350, 550);
+	button->SetSize(75, 75);
+	button->SetOnClick([]() {
+		CharacterState::GetInstance(2)->ChangeState(CharacterStateTypes::CHARACTER_STATE_Attack);
+	});
+	m_listButton.push_back(button);
 
 	//text game title
 	shader = ResourceManagers::GetInstance()->GetShader("TextShader");
 	std::shared_ptr<Font> font = ResourceManagers::GetInstance()->GetFont("arialbd");
 	m_score = std::make_shared< Text>(shader, font, "score: 10", TEXT_COLOR::RED, 1.0);
 	m_score->Set2DPosition(Vector2(5, 25));
+
+	// Animation
+	m_hero = CharacterState::GetInstance(2);
 }
 
 void GSPlay::Exit()
@@ -89,7 +91,43 @@ void GSPlay::HandleEvents()
 
 void GSPlay::HandleKeyEvents(int key, bool bIsPressed)
 {
-	
+	if (bIsPressed) {
+		Vector2 oldPos = m_BackGround->Get2DPosition();
+		if (key == KEY_RIGHT) {
+			m_hero->ChangeState(CharacterStateTypes::CHARACTER_STATE_Walk);
+			int newPosX = oldPos.x - 8;
+			if (MAP_WIDTH / 2 + newPosX < screenWidth) {
+				newPosX = screenWidth - MAP_WIDTH / 2;
+				/*Vector2 oldHeroPos = m_hero->Get2DPosition();
+				m_hero->Set2DPosition(oldHeroPos.x + 16, oldHeroPos.y);*/
+			}
+			m_BackGround->Set2DPosition(newPosX, oldPos.y);
+		}
+		else if (key == KEY_LEFT) {
+			m_hero->ChangeState(CharacterStateTypes::CHARACTER_STATE_Walk);
+			int newPosX = oldPos.x + 8;
+			if (MAP_WIDTH / 2 - newPosX < 0)
+				newPosX = MAP_WIDTH / 2;
+			m_BackGround->Set2DPosition(newPosX, oldPos.y);
+		}
+		else if (key == KEY_DOWN) {
+			m_hero->ChangeState(CharacterStateTypes::CHARACTER_STATE_Walk);
+			int newPosY = oldPos.y - 8;
+			if (MAP_HEIGHT / 2 + newPosY < screenHeight)
+				newPosY = screenHeight - MAP_HEIGHT / 2;
+			m_BackGround->Set2DPosition(oldPos.x, newPosY);
+		}
+		else if (key == KEY_UP) {
+			m_hero->ChangeState(CharacterStateTypes::CHARACTER_STATE_Walk);
+			int newPosY = oldPos.y + 8;
+			if (MAP_HEIGHT / 2 - newPosY < 0)
+				newPosY = MAP_HEIGHT / 2;
+			m_BackGround->Set2DPosition(oldPos.x, newPosY);
+		}
+	}
+	else {
+		m_hero->ChangeState(CharacterStateTypes::CHARACTER_STATE_Idle);
+	}
 }
 
 void GSPlay::HandleTouchEvents(int x, int y, bool bIsPressed)
@@ -103,6 +141,11 @@ void GSPlay::HandleTouchEvents(int x, int y, bool bIsPressed)
 
 void GSPlay::Update(float deltaTime)
 {
+	m_hero->Update(deltaTime);
+	for (auto obj : m_listSpriteAnimations)
+	{
+		obj->Update(deltaTime);
+	}
 }
 
 void GSPlay::Draw()
@@ -114,10 +157,16 @@ void GSPlay::Draw()
 		it->Draw();
 	}
 	// draw rocks
-	for (auto it : m_listObject)
+	for (auto it : m_listSprite2D)
 	{
 		it->Draw();
 	}
+	// draw anim
+	for (auto obj : m_listSpriteAnimations)
+	{
+		obj->Draw();
+	}
+	m_hero->Draw();
 	m_score->Draw();
 }
 

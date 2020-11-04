@@ -1,6 +1,9 @@
 #pragma once
 #include "gamestatebase.h"
 
+class SpriteAnimation;
+class Sprite2D;
+
 class GSIntro :
 	public GameStateBase
 {
@@ -21,6 +24,7 @@ public:
 	void Draw();
 
 private:
+	std::shared_ptr<SpriteAnimation> m_loading;
 	std::shared_ptr<Sprite2D> m_logo;
 	float m_time;
 };

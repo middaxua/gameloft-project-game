@@ -60,6 +60,7 @@ void GameStateMachine::PopState()
 
 	// resume previous state
 	if (!m_StatesStack.empty()) {
+		m_pNextState = m_StatesStack.back();
 		m_StatesStack.back()->Resume();
 	}
 }
