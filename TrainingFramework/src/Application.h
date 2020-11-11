@@ -13,6 +13,7 @@ public:
 	void		Render();
 	void		HandleKeyEvent(unsigned char key, bool bIsPresseded);
 	void		HandleTouchEvent(GLint x, GLint y, bool bIsPresseded);
+	void		HandleMouseMoveEvent(GLint x, GLint y);
 	void		Exit();
 
 private:

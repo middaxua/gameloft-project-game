@@ -79,6 +79,10 @@ void GSCredit::HandleTouchEvents(int x, int y, bool bIsPressed)
 	}
 }
 
+void GSCredit::HandleMouseMoveEvents(int x, int y)
+{
+}
+
 void GSCredit::Update(float deltaTime)
 {
 

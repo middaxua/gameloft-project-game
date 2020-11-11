@@ -81,6 +81,7 @@
 // KEY define 
 #ifdef WIN32
 
+#define KEY_LSHIFT				16	// key Left Shift
 #define KEY_BACK				27	// key Esc
 #define KEY_LEFT				37	// key <-
 #define KEY_RIGHT				39	// key ->

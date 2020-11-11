@@ -18,13 +18,17 @@ GSMenu::~GSMenu()
 void GSMenu::Init()
 {
 	auto model = ResourceManagers::GetInstance()->GetModel("Sprite2D");
-	auto texture = ResourceManagers::GetInstance()->GetTexture("bg_main_menu");
+	auto texture = ResourceManagers::GetInstance()->GetTexture("bg_paralel_menu");
 
 	//BackGround
 	auto shader = ResourceManagers::GetInstance()->GetShader("TextureShader");
-	m_BackGround = std::make_shared<Sprite2D>(model, shader, texture);
-	m_BackGround->Set2DPosition(screenWidth / 2, screenHeight / 2);
-	m_BackGround->SetSize(screenWidth, screenHeight);
+	m_BackGround1 = std::make_shared<Sprite2D>(model, shader, texture);
+	m_BackGround1->Set2DPosition(screenWidth / 2, screenHeight / 2);
+	m_BackGround1->SetSize(screenWidth, screenHeight);
+
+	m_BackGround2 = std::make_shared<Sprite2D>(model, shader, texture);
+	m_BackGround2->Set2DPosition(screenWidth + screenWidth / 2, screenHeight / 2);
+	m_BackGround2->SetSize(screenWidth, screenHeight);
 
 	//play button
 	texture = ResourceManagers::GetInstance()->GetTexture("button_play_2");
@@ -32,7 +36,7 @@ void GSMenu::Init()
 	button->Set2DPosition(screenWidth / 2, screenHeight / 2);
 	button->SetSize(250, 105);
 	button->SetOnClick([]() {
-		//GameStateMachine::GetInstance()->ChangeState(StateTypes::STATE_Play);
+		GameStateMachine::GetInstance()->ChangeState(StateTypes::STATE_HeroSelecting);
 		});
 	m_listButton.push_back(button);
 
@@ -47,7 +51,7 @@ void GSMenu::Init()
 	m_listButton.push_back(button);
 
 	//setting button
-	texture = ResourceManagers::GetInstance()->GetTexture("button_setting");
+	texture = ResourceManagers::GetInstance()->GetTexture("button_credit");
 	button = std::make_shared<GameButton>(model, shader, texture);
 	button->Set2DPosition(screenWidth / 2 - 45, screenHeight - 60);
 	button->SetSize(60, 60);
@@ -57,7 +61,7 @@ void GSMenu::Init()
 	m_listButton.push_back(button);
 
 	//credit button
-	texture = ResourceManagers::GetInstance()->GetTexture("button_setting");
+	texture = ResourceManagers::GetInstance()->GetTexture("button_credit");
 	button = std::make_shared<GameButton>(model, shader, texture);
 	button->Set2DPosition(screenWidth / 2 + 45, screenHeight - 60);
 	button->SetSize(60, 60);
@@ -76,27 +80,35 @@ void GSMenu::Init()
 		});
 	m_listButton.push_back(button);
 
+	// sprite title game
+	texture = ResourceManagers::GetInstance()->GetTexture("title_game");
+	m_titleGame = std::make_shared<Sprite2D>(model, shader, texture);
+	m_titleGame->Set2DPosition(screenWidth / 2, 120);
+	m_titleGame->SetSize(500, 250);
 
 	//text game title
 	shader = ResourceManagers::GetInstance()->GetShader("TextShader");
 	std::shared_ptr<Font> font = ResourceManagers::GetInstance()->GetFont("arialbd");
-	m_Text_gameName = std::make_shared< Text>(shader, font, "HERO AND VILLAINS", TEXT_COLOR::GREEN, 1.25);
-	m_Text_gameName->Set2DPosition(Vector2(screenWidth / 2 - 120, 120));
+	m_Text_gameName = std::make_shared< Text>(shader, font, "", TEXT_COLOR::GREEN, 1.25);
+	m_Text_gameName->Set2DPosition(Vector2(screenWidth / 2 - 130, 120));
+
+	ResourceManagers::GetInstance()->PlaySound("menu");
 }
 
 void GSMenu::Exit()
 {
+	ResourceManagers::GetInstance()->PauseSound("menu");
 }
 
 
 void GSMenu::Pause()
 {
-
+	ResourceManagers::GetInstance()->PauseSound("menu");
 }
 
 void GSMenu::Resume()
 {
-
+	ResourceManagers::GetInstance()->PlaySound("menu");
 }
 
 
@@ -119,9 +131,31 @@ void GSMenu::HandleTouchEvents(int x, int y, bool bIsPressed)
 	}
 }
 
+void GSMenu::HandleMouseMoveEvents(int x, int y)
+{
+}
+
 void GSMenu::Update(float deltaTime)
 {
-	m_BackGround->Update(deltaTime);
+	Vector2 oldBG1 = m_BackGround1->Get2DPosition();
+	Vector2 oldBG2 = m_BackGround2->Get2DPosition();
+	float dx = 80 * deltaTime;
+	if (oldBG1.x - dx < -screenWidth / 2)
+	{
+		m_BackGround2->Set2DPosition(oldBG2.x - dx, oldBG2.y);
+		m_BackGround1->Set2DPosition(oldBG2.x - dx + screenWidth, oldBG1.y);
+	}
+	else if (oldBG2.x - dx < -screenWidth / 2)
+	{
+		m_BackGround1->Set2DPosition(oldBG1.x - dx, oldBG1.y);
+		m_BackGround2->Set2DPosition(oldBG1.x - dx + screenWidth, oldBG2.y);
+	}
+	else
+	{
+		m_BackGround2->Set2DPosition(oldBG2.x - dx, oldBG2.y);
+		m_BackGround1->Set2DPosition(oldBG1.x - dx, oldBG1.y);
+	}
+
 	for (auto it : m_listButton)
 	{
 		it->Update(deltaTime);
@@ -130,10 +164,12 @@ void GSMenu::Update(float deltaTime)
 
 void GSMenu::Draw()
 {
-	m_BackGround->Draw();
+	m_BackGround1->Draw();
+	m_BackGround2->Draw();
 	for (auto it : m_listButton)
 	{
 		it->Draw();
 	}
+	m_titleGame->Draw();
 	m_Text_gameName->Draw();
 }

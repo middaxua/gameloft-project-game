@@ -21,6 +21,7 @@ public:
 	void HandleEvents();
 	void HandleKeyEvents(int key, bool bIsPressed);
 	void HandleTouchEvents(int x, int y, bool bIsPressed);
+	void HandleMouseMoveEvents(int x, int y);
 	void Update(float deltaTime);
 	void Draw();
 

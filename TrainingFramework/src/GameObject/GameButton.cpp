@@ -6,6 +6,7 @@ GameButton::GameButton(std::shared_ptr<Models> model, std::shared_ptr<Shaders> s
 {
 	m_pBtClick = nullptr;
 	m_isHandle = false;
+	m_isEnable = true;
 }
 
 GameButton::~GameButton()
@@ -32,4 +33,12 @@ void GameButton::HandleTouchEvents(GLint x, GLint y, bool bIsPressed)
 bool GameButton::IsHandle()
 {
 	return m_isHandle;
+}
+
+bool GameButton::IsClicked(GLint x, GLint y, bool bIsPressed)
+{
+	if (bIsPressed)
+	{
+		return (x > m_Vec2DPos.x - m_iWidth / 2) && (x < m_Vec2DPos.x + m_iWidth / 2) && (y > m_Vec2DPos.y - m_iHeight / 2) && (y < m_Vec2DPos.y + m_iHeight / 2);
+	}
 }

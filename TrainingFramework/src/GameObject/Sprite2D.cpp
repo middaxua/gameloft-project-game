@@ -170,3 +170,27 @@ void Sprite2D::SetSize(GLint width, GLint height)
 	m_Vec3Scale = Vector3((float)m_iWidth / screenWidth, (float)m_iHeight / screenHeight, 1);
 	CaculateWorldMatrix();
 }
+
+void Sprite2D::MoveLeft(GLfloat dx)
+{
+	Vector2 old = Get2DPosition();
+	Set2DPosition(old.x - dx, old.y);
+}
+
+void Sprite2D::MoveRight(GLfloat dx)
+{
+	Vector2 old = Get2DPosition();
+	Set2DPosition(old.x + dx, old.y);
+}
+
+void Sprite2D::MoveUp(GLfloat dy)
+{
+	Vector2 old = Get2DPosition();
+	Set2DPosition(old.x, old.y - dy);
+}
+
+void Sprite2D::MoveDown(GLfloat dy)
+{
+	Vector2 old = Get2DPosition();
+	Set2DPosition(old.x, old.y + dy);
+}
