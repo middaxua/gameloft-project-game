@@ -74,6 +74,8 @@
     <ClCompile Include="src\GameStates\Player.cpp" />
     <ClCompile Include="src\GameStates\Enermy.cpp" />
     <ClCompile Include="src\GameStates\GSHeroSelecting.cpp" />
+    <ClCompile Include="src\GameHelper\LoadingHelper.cpp" />
+    <ClCompile Include="src\GameHelper\Constants.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Application.h">
@@ -139,6 +141,7 @@
     <ClInclude Include="src\GameStates\Enermy.h" />
     <ClInclude Include="src\GameStates\GSHeroSelecting.h" />
     <ClInclude Include="src\GameHelper\LoadingHelper.h" />
+    <ClInclude Include="src\GameHelper\Constants.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram.cd" />

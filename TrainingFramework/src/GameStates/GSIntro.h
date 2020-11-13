@@ -24,9 +24,14 @@ public:
 	void Update(float deltaTime);
 	void Draw();
 
+	void Loading();
+
 private:
+	const float TIME_DISPLAY_LOGO = 2.3f;
+
 	std::shared_ptr<SpriteAnimation> m_loading;
 	std::shared_ptr<Sprite2D> m_logo;
 	float m_time;
+	bool m_isPause;
 };
 

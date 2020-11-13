@@ -6,15 +6,12 @@ extern int screenHeight; //need get on Graphic engine
 
 GSCredit::GSCredit()
 {
-
+	m_isPause = false;
 }
-
 
 GSCredit::~GSCredit()
 {
 }
-
-
 
 void GSCredit::Init()
 {
@@ -46,19 +43,18 @@ void GSCredit::Init()
 
 void GSCredit::Exit()
 {
+	m_isPause = true;
 }
-
 
 void GSCredit::Pause()
 {
-
+	m_isPause = true;
 }
 
 void GSCredit::Resume()
 {
-
+	m_isPause = false;
 }
-
 
 void GSCredit::HandleEvents()
 {
@@ -90,10 +86,13 @@ void GSCredit::Update(float deltaTime)
 
 void GSCredit::Draw()
 {
-	m_BackGround->Draw();
-	for (auto it : m_listButton)
+	if (!m_isPause)
 	{
-		it->Draw();
+		m_BackGround->Draw();
+		for (auto it : m_listButton)
+		{
+			it->Draw();
+		}
+		m_Text_gameName->Draw();
 	}
-	m_Text_gameName->Draw();
 }

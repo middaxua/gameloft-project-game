@@ -141,6 +141,11 @@ void ResourceManagers::PauseSound(const std::string & name)
 
 std::shared_ptr<Shaders> ResourceManagers::GetShader(const std::string& name)
 {
+	auto it = m_MapShader.find(name);
+	if (it != m_MapShader.end())
+	{
+		return it->second;
+	}
 	std::shared_ptr<Shaders>  shaders;
 	shaders = std::make_shared<Shaders>();
 	std::string vs = m_ShaderPath + name + ".vs";

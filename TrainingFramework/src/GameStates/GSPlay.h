@@ -40,8 +40,8 @@ public:
 private:
 	int keyType = 0, m_walk_speed = 160, m_run_speed = 240;
 	int miniW, miniH;
-	const int MAP_WIDTH = 3813;
-	const int MAP_HEIGHT = 3733;
+	const int MAP_WIDTH = 3733;
+	const int MAP_HEIGHT = 3813;
 	const int UP = 1;
 	const int RIGHT = 2;
 	const int DOWN = 4;
@@ -49,11 +49,11 @@ private:
 	const int LSHIFT = 16;
 	const int NUM_OF_ENERMY = 3;
 	bool isUsingUlti = false;
-	std::shared_ptr<Sprite2D> m_miniBackground, m_BackGround, m_targetScope, m_radiusSkill, miniHero;
+	std::shared_ptr<Sprite2D> m_miniBackground, m_BackGround, m_targetScope, m_radiusSkill, miniHero, gray;
 	std::shared_ptr<Sprite2D> miniEnermy[3], m_status[6];
 	std::shared_ptr<SpriteAnimation> m_killCD[2], m_healthBar[4];
 	std::shared_ptr<Text> m_score;
-	std::shared_ptr<GameButton> button_play, button_pause, button_ulti;
+	std::shared_ptr<GameButton> button_play, button_pause, button_ulti, m_endGame;
 	std::vector<std::shared_ptr<GameButton>> m_listButton;
 	std::vector<std::shared_ptr<Sprite2D>> m_listSprite2D;
 };

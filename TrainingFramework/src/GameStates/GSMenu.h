@@ -23,9 +23,9 @@ public:
 	void Draw();
 
 private:
+	std::shared_ptr<Text> m_Text_gameName;
 	std::shared_ptr<Sprite2D> m_BackGround1, m_BackGround2, m_titleGame;
-	std::list<std::shared_ptr<GameButton>>	m_listButton;
-	std::shared_ptr<Text>  m_Text_gameName;
-
+	std::shared_ptr<GameButton> m_musicOnButton, m_musicOffButton;
+	std::list<std::shared_ptr<GameButton>> m_listButton;
+	bool m_isPause;
 };
-

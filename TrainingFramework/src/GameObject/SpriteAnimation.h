@@ -27,6 +27,10 @@ public:
 
 	Vector2		Get2DPosition();
 	void		SetSize(GLint width, GLint height);
-	void		SetCurrentFrame(int id);
+	void		SetSize(Vector2 size);
+
+	void		SetCurrentFrame(int idCurFrame);
+	bool		IsLastFrame();
+	void		ResetCurrentTime();
 };
 

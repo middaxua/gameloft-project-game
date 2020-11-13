@@ -42,3 +42,13 @@ bool GameButton::IsClicked(GLint x, GLint y, bool bIsPressed)
 		return (x > m_Vec2DPos.x - m_iWidth / 2) && (x < m_Vec2DPos.x + m_iWidth / 2) && (y > m_Vec2DPos.y - m_iHeight / 2) && (y < m_Vec2DPos.y + m_iHeight / 2);
 	}
 }
+
+bool GameButton::IsEnable()
+{
+	return m_isEnable;
+}
+
+void GameButton::SetEnable(bool e)
+{
+	m_isEnable = e;
+}

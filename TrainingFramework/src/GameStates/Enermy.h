@@ -1,12 +1,12 @@
 #pragma once
 #include "GameConfig.h"
-#include "gamestatebase.h"
+#include "ResourceManagers.h"
 #include <vector>
 
 class Sprite2D;
 class SpriteAnimation;
 
-class Enermy : public GameStateBase
+class Enermy
 {
 
 public:
@@ -19,16 +19,6 @@ public:
 		return m_pActiveState;
 	}
 
-	void Init();
-	void Exit();
-
-	void Pause();
-	void Resume();
-
-	void HandleEvents();
-	void HandleKeyEvents(int key, bool bIsPressed);
-	void HandleTouchEvents(int x, int y, bool bIsPressed);
-	void HandleMouseMoveEvents(int x, int y);
 	void Update(float deltaTime);
 	void Draw();
 
@@ -42,9 +32,9 @@ public:
 	void ChaseHero(Vector2 distanceVector, float d);
 	void Move(Vector2 distanceVector, float d);
 	void PrepareAttack(Vector2 distanceVector, float deltaTime);
-	//void CheckCollision();
+	Vector2 Get2DPosition();
 
-	bool m_isDie, m_isAttacking;
+	bool m_isDie, m_isAttacking, isBoss;
 	GLint m_heal, m_direction, m_distanceChase, m_distanceAttack, m_speed = 60, m_dame = 10;
 private:
 	char **arrayCharacterName;

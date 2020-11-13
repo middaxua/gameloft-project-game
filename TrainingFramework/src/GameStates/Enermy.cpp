@@ -3,9 +3,11 @@
 #include "SpriteAnimation.h"
 #include "Player.h"
 
-extern int m_id;
+extern int idHero;
+extern int score;
 
 Enermy::Enermy(int id) {
+	isBoss = false;
 	m_timeAttack = m_timeHurt = -1;
 	m_timeDie = 1;
 	m_heal = 100;
@@ -61,45 +63,6 @@ Enermy::~Enermy() {
 	delete[] arrayCharacterName;
 }
 
-void Enermy::Init()
-{
-}
-
-void Enermy::Exit()
-{
-}
-
-
-void Enermy::Pause()
-{
-
-}
-
-void Enermy::Resume()
-{
-
-}
-
-
-void Enermy::HandleEvents()
-{
-
-}
-
-void Enermy::HandleKeyEvents(int key, bool bIsPressed)
-{
-
-}
-
-void Enermy::HandleTouchEvents(int x, int y, bool bIsPressed)
-{
-
-}
-
-void Enermy::HandleMouseMoveEvents(int x, int y)
-{
-}
-
 void Enermy::Update(float deltaTime)
 {
 	if (Player::GetInstance()->m_isDie)
@@ -130,7 +93,7 @@ void Enermy::Update(float deltaTime)
 			}
 		}
 		else { // Neu bi thuong
-			m_pEffectHurt[m_id]->Update(deltaTime);
+			m_pEffectHurt[idHero]->Update(deltaTime);
 			m_timeHurt -= deltaTime;
 			flash = (flash + 1) % 4;
 		}
@@ -157,7 +120,7 @@ void Enermy::Update(float deltaTime)
 		// set lai toa do cho effect
 		Vector2 oldPos = m_pActiveState->Get2DPosition();
 		m_pExplosionDie->Set2DPosition(oldPos.x, oldPos.y + 15);
-		m_pEffectHurt[m_id]->Set2DPosition(oldPos);
+		m_pEffectHurt[idHero]->Set2DPosition(oldPos);
 	}
 }
 
@@ -169,7 +132,7 @@ void Enermy::Draw()
 			m_pExplosionDie->Draw();
 	}
 	if (m_timeHurt > -1)
-		m_pEffectHurt[m_id]->Draw();
+		m_pEffectHurt[idHero]->Draw();
 }
 
 void Enermy::Attack()
@@ -199,6 +162,7 @@ void Enermy::Idle()
 void Enermy::Die()
 {
 	m_isDie = true;
+	score += (isBoss) ? 30 : 10;
 	Vector2 oldPos = m_pActiveState->Get2DPosition();
 	m_listState[5]->Set2DPosition(oldPos);
 	m_pActiveState = m_listState[5];
@@ -218,7 +182,7 @@ void Enermy::Hurt(int dame)
 	if (m_heal > 0)
 	{
 		Vector2 oldPos = m_pActiveState->Get2DPosition();
-		m_pEffectHurt[m_id]->Set2DPosition(oldPos);
+		m_pEffectHurt[idHero]->Set2DPosition(oldPos);
 		m_listState[7]->Set2DPosition(oldPos);
 		m_pActiveState = m_listState[7];
 	}
@@ -278,7 +242,12 @@ void Enermy::PrepareAttack(Vector2 distanceVector, float deltaTime)
 			}
 		}
 		else
-			m_countToAttack = 0.5;
+			m_countToAttack = 0.25;
 	}
-	else m_countToAttack = 0.5;
+	else m_countToAttack = 0.25;
+}
+
+Vector2 Enermy::Get2DPosition()
+{
+	return m_pActiveState->Get2DPosition();
 }

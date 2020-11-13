@@ -28,10 +28,6 @@ public:
 
 	Vector2		Get2DPosition();
 	void		SetSize(GLint width, GLint height);
-
-	void		MoveLeft(GLfloat dx);
-	void		MoveRight(GLfloat dx);
-	void		MoveUp(GLfloat dy);
-	void		MoveDown(GLfloat dy);
+	void		SetSize(Vector2 size);
 };
 

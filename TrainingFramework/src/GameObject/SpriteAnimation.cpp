@@ -167,7 +167,26 @@ void SpriteAnimation::SetSize(GLint width, GLint height)
 	CaculateWorldMatrix();
 }
 
-void SpriteAnimation::SetCurrentFrame(int id)
+void SpriteAnimation::SetSize(Vector2 size)
 {
-	m_currentFrame = id;
+	m_iWidth = size.x;
+	m_iHeight = size.y;
+	m_Vec3Scale = Vector3((float)m_iWidth / screenWidth, (float)m_iHeight / screenHeight, 1);
+	CaculateWorldMatrix();
+}
+
+void SpriteAnimation::SetCurrentFrame(int idCurFrame)
+{
+	if (idCurFrame < m_numFrames)
+		m_currentFrame = idCurFrame;
+}
+
+bool SpriteAnimation::IsLastFrame()
+{
+	return m_currentFrame == m_numFrames - 1;
+}
+
+void SpriteAnimation::ResetCurrentTime()
+{
+	m_currentTime = 0;
 }

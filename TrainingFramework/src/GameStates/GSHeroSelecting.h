@@ -32,7 +32,6 @@ private:
 	std::vector<std::shared_ptr<GameButton>> m_listButton;
 	std::shared_ptr<Sprite2D> m_BackGround1, m_BackGround2;
 	std::shared_ptr<Text> m_Text_gameName;
-	char **arrayCharacterName;
-	float m_time;
+	bool m_isPause;
 };
 
