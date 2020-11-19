@@ -1,47 +1,72 @@
 #pragma once
 #include "GameConfig.h"
 #include "ResourceManagers.h"
+#include "Sprite2D.h"
+#include "SpriteAnimation.h"
+#include "Player.h"
+#include "GameHelper/Constants.h"
 #include <vector>
+#include <ctime>
 
-class Sprite2D;
-class SpriteAnimation;
+class Player;
+class Constants;
+
+enum EnermyStates {
+	eSTATE_Idle = 0,
+	eSTATE_Walk,
+	eSTATE_Attack,
+	eSTATE_Win,
+	eSTATE_Die,
+	eSTATE_Hurt
+};
 
 class Enermy
 {
 
 public:
-	Enermy(int id);
+	Enermy();
 	~Enermy();
 
 public:
-	inline std::shared_ptr<SpriteAnimation>	CurrentState()const
-	{
-		return m_pActiveState;
-	}
-
-	void Update(float deltaTime);
+	void Init();
+	void Update(std::shared_ptr<Player> hero, float deltaTime);
 	void Draw();
 
-	void Attack();
-	void Walk();
 	void Idle();
-	void Die();
+	void Walk();
+	void Attack(std::shared_ptr<Player> hero, int direction);
 	void Win();
-	void Hurt(int dame);
+	void Die();
+	int Hurt(int dame);
+	void ChangeState(EnermyStates es);
+	void Reset(int score);
 
-	void ChaseHero(Vector2 distanceVector, float d);
-	void Move(Vector2 distanceVector, float d);
-	void PrepareAttack(Vector2 distanceVector, float deltaTime);
+	bool IsDie();
+	bool IsAttack();
+	bool IsWin();
+	bool IsHurt();
+	bool IsBoss();
+	int GetHeal();
+	int GetHealMax();
+	std::string GetStringHeal();
+	bool Chasable(int d);
+	bool Attackable(int d, float deltaTime);
+	void ChaseHero(Vector2 dVector, float d);
+
+	void SetDirection(int direction);
+	void Set2DPosition(Vector2 pos);
+
 	Vector2 Get2DPosition();
 
-	bool m_isDie, m_isAttacking, isBoss;
-	GLint m_heal, m_direction, m_distanceChase, m_distanceAttack, m_speed = 60, m_dame = 10;
 private:
-	char **arrayCharacterName;
-	GLint flash = 0;
-	GLfloat m_timeAttack, m_timeDie, m_timeHurt, m_countToAttack = 0.5;
-	std::vector<std::shared_ptr<SpriteAnimation>> m_listState;
-	std::vector<std::shared_ptr<Sprite2D>> m_listBullet;
-	std::shared_ptr<Sprite2D> m_skill;
-	std::shared_ptr<SpriteAnimation> m_pActiveState, m_pExplosionDie, m_pEffectHurt[3];
+	bool m_isBoss;
+	GLint m_healMax;
+	std::string m_strHeal;
+	GLint m_heal, m_speed, m_dame, m_direction, m_flash;
+	GLint m_distanceChase, m_distanceAttack;
+	GLfloat m_timeDelayAttack;
+	std::shared_ptr<Constants> constants;
+	std::shared_ptr<SpriteAnimation> m_activeState, m_explosion;
+	std::vector<std::shared_ptr<Text>> m_listText;
+	std::vector<std::shared_ptr<SpriteAnimation>> m_listEnermyState;
 };

@@ -2,14 +2,15 @@
 #include "BaseObject.h"
 
 enum class TEXT_COLOR {
-	WHILE = 0,
+	WHITE = 0,
 	RED,
 	GREEN,
 	BLUE,
 	YELLOW,
 	PURPLE,
 	CYAN,
-	BLACK
+	BLACK,
+	ORANGE
 };
 
 class Font;
@@ -28,7 +29,11 @@ public:
 
 	void		Set2DPosition(GLfloat x, GLfloat y);
 	void		Set2DPosition(Vector2 pos);
+
+	void		SetEnable(bool status);
+	bool		IsEnable();
 private:
+	bool					m_isEnable;
 	std::string				m_text;
 	std::shared_ptr<Font>	m_font;
 

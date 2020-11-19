@@ -3,6 +3,7 @@
 class SpriteAnimation : public BaseObject
 {
 private:
+	bool			m_isEnable;
 	std::string		m_Text;
 	void			CaculateWorldMatrix();
 protected:
@@ -32,5 +33,9 @@ public:
 	void		SetCurrentFrame(int idCurFrame);
 	bool		IsLastFrame();
 	void		ResetCurrentTime();
+	void		SetEnable(bool status);
+	bool		IsEnable();
+
+	void		SetScaleX(GLint direction);
 };
 

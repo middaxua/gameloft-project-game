@@ -6,6 +6,8 @@
 extern int screenWidth; //need get on Graphic engine
 extern int screenHeight; //need get on Graphic engine
 
+int introSound;
+
 GSIntro::GSIntro()
 {
 	m_time = 0;
@@ -35,20 +37,25 @@ void GSIntro::Init()
 	m_logo = std::make_shared<Sprite2D>(model, shader, texture);
 	m_logo->Set2DPosition(screenWidth / 2, screenHeight / 2);
 	m_logo->SetSize(200, 200);
+
+	introSound = ResourceManagers::GetInstance()->PlaySound("intro");
 }
 
 void GSIntro::Exit()
 {
 	m_isPause = true;
+	ResourceManagers::GetInstance()->StopAllSound();
 }
 
 void GSIntro::Pause()
 {
 	m_isPause = true;
+	ResourceManagers::GetInstance()->PauseSound(introSound, true);
 }
 
 void GSIntro::Resume()
 {
+	ResourceManagers::GetInstance()->PauseSound(introSound, false);
 	m_isPause = false;
 }
 
@@ -99,6 +106,6 @@ void GSIntro::Loading()
 	std::shared_ptr<LoadingHelper> lh = LoadingHelper::GetInstance();
 	lh->LoadingIntro();
 	lh->LoadingMenu();
-	lh->LoadingHeroSelecting(3, 7);
+	lh->LoadingHeroSelecting(3, 6);
 	lh->LoadingMusic();
 }

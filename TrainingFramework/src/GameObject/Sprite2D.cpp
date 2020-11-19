@@ -7,19 +7,19 @@
 extern GLint screenWidth;
 extern GLint screenHeight;
 
-
-
 void Sprite2D::CaculateWorldMatrix()
 {
-	Matrix m_Sc, m_T;
+	Matrix m_Sc, m_T, m_R;
 	m_Sc.SetScale(m_Vec3Scale);
 	m_T.SetTranslation(m_Vec3Position);
-	m_WorldMat = m_Sc * m_T;
+	m_R.SetRotationZ(m_Vec3Rotation.z);
+	m_WorldMat = m_Sc * m_R * m_T;
 }
 
 Sprite2D::Sprite2D(std::shared_ptr<Models> model, std::shared_ptr<Shaders> shader, std::shared_ptr<Texture> texture)
 	: BaseObject()
 {
+	m_isEnable = true;
 	m_pModel = model;
 	m_pShader = shader;
 	m_pCamera = nullptr;
@@ -34,6 +34,7 @@ Sprite2D::Sprite2D(std::shared_ptr<Models> model, std::shared_ptr<Shaders> shade
 Sprite2D::Sprite2D(std::shared_ptr<Models> model, std::shared_ptr<Shaders> shader, Vector4 color)
 	: BaseObject()
 {
+	m_isEnable = true;
 	m_pModel = model;
 	m_pShader = shader;
 	m_pCamera = nullptr;
@@ -177,4 +178,26 @@ void Sprite2D::SetSize(Vector2 size)
 	m_iHeight = size.y;
 	m_Vec3Scale = Vector3((float)m_iWidth / screenWidth, (float)m_iHeight / screenHeight, 1);
 	CaculateWorldMatrix();
+}
+
+void Sprite2D::SetScaleX(GLfloat scaleX)
+{
+	m_Vec3Scale.x = scaleX;
+	CaculateWorldMatrix();
+}
+
+void Sprite2D::SetRotationZ(GLfloat angle)
+{
+	m_Vec3Rotation.z = angle;
+	CaculateWorldMatrix();
+}
+
+void Sprite2D::SetEnable(bool status)
+{
+	m_isEnable = status;
+}
+
+bool Sprite2D::IsEnable()
+{
+	return m_isEnable;
 }

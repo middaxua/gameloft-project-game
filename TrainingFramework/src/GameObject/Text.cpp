@@ -135,7 +135,7 @@ Vector4 Text::EnumToVector(TEXT_COLOR color)
 	Vector4 vecColor;
 	switch (color)
 	{
-	case TEXT_COLOR::WHILE:
+	case TEXT_COLOR::WHITE:
 		vecColor = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 		break;
 	case TEXT_COLOR::RED:
@@ -155,6 +155,9 @@ Vector4 Text::EnumToVector(TEXT_COLOR color)
 		break;
 	case TEXT_COLOR::CYAN:
 		vecColor = Vector4(0.0f, 0.9f, 0.9f, 1.0f);
+		break;
+	case TEXT_COLOR::ORANGE:
+		vecColor = Vector4(1.0f, 0.65f, 0.0f, 1.0f);
 		break;
 	default:
 		vecColor = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -184,4 +187,14 @@ void Text::Set2DPosition(Vector2 pos)
 	m_Vec3Position = Vector3(xx, yy, 1.0);
 
 	CaculateWorldMatrix();
+}
+
+void Text::SetEnable(bool status)
+{
+	m_isEnable = status;
+}
+
+bool Text::IsEnable()
+{
+	return m_isEnable;
 }

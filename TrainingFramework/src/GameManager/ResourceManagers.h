@@ -30,8 +30,12 @@ public:
 	
 	// sound
 	void AddSound(const std::string& name);
-	void PlaySound(const std::string& name, bool loop = false);
-	void PauseSound(const std::string& name);
+	int PlaySound(const std::string& name, bool loop = false);
+	void PauseAllSound(bool status);
+	void PauseSound(int h, bool status);
+	void StopAllSound();
+	float GetGlobalVolume();
+	void SetGlobalVolume(float v);
 
 	std::shared_ptr<Shaders> GetShader(const std::string& name);
 	std::shared_ptr<Texture> GetTexture(const std::string& name);
@@ -46,7 +50,7 @@ private:
 	// sound
 	std::string m_SoundsPath;
 	std::map<std::string, std::shared_ptr<SoLoud::Wav>> m_MapWave;
-	std::shared_ptr<SoLoud::Soloud> m_Soloud;
+	SoLoud::Soloud m_Soloud;
 
 	std::string m_ShaderPath;
 	std::string m_TexturePath;

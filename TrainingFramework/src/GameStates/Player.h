@@ -1,24 +1,26 @@
 #pragma once
-#include "GameManager/Singleton.h"
 #include "GameConfig.h"
-#include "GameHelper/Constants.h"
 #include "ResourceManagers.h"
+#include "Sprite2D.h"
+#include "SpriteAnimation.h"
+#include "Enermy.h"
 #include <vector>
 
+class Enermy;
 class Sprite2D;
 class SpriteAnimation;
+class Constants;
 
 enum HeroStates {
-	STATE_Idle = 0,
-	STATE_Walk,
-	STATE_Run,
-	STATE_Attack,
-	STATE_Win,
-	STATE_Die,
-	STATE_Hurt
+	hSTATE_Idle = 0,
+	hSTATE_Walk,
+	hSTATE_Run,
+	hSTATE_Attack,
+	hSTATE_Die,
+	hSTATE_Hurt
 };
 
-class Player : public CSingleton<Player>
+class Player
 {
 
 public:
@@ -26,41 +28,60 @@ public:
 	~Player();
 
 public:
-	inline std::shared_ptr<SpriteAnimation>	CurrentState()const
-	{
-		return m_pActiveState;
-	}
-
+	void Init();
 	void Update(float deltaTime);
+	void UpdateAnim(float deltaTime);
+	void UpdateTimeTired(float deltaTime);
+	void UpdateWeapon(float deltaTime);
 	void Draw();
 
-	void Attack(int id);
+	int Attack(std::shared_ptr<Enermy> enermy);
 	void Run();
 	void Walk();
 	void Idle();
 	void Die();
 	void Hurt(int dame);
-	void Ultimate(Vector2 centerPos);
+	int Ultimate(std::vector<std::shared_ptr<Enermy>> listEnermy, Vector2 ultiPos);
 	void ChangeState(HeroStates hs);
-	void ResetTimeUltimate(float time);
-	Vector2 Get2DPosition();
 	
-	bool IsMove();
+	bool	IsMove();
+	bool	IsRun();
+	bool	IsDie();
+	bool	IsHurt();
+	bool	IsAttack();
+	bool	IsTired();
+	bool	NeedTimeTired();
+	bool	HasUltimate();
+	bool	IsLastFrame();
+	bool	Attackable();
+	int		GetSpeed();
+	int		GetDame();
+	int		GetHeal();
+	int		GetHealMax();
+	int		GetDistanceAttack();
+	float	GetTimeDelayAttack();
+	float	GetTimeDelayUltimate();
+	float	GetTimeTired();
+	float	CalculateAngle(std::shared_ptr<Enermy> enermy);
+	Vector2 Get2DPosition();
 
-	GLint m_distanceAttack[3] = { 300, 225, 150 };
-	GLint m_dame[3] = { 30, 40, 50 };
-	GLfloat m_timeTired, m_timeUltimate, m_timeDisplayEffectUltimate;
-	bool m_isDie, m_isAttacking, m_isTired;
-	std::shared_ptr<SpriteAnimation> m_effectUltimate;
-	GLint m_heal, m_direction = 0;
-	GLfloat m_timeAttack, m_timeDie, m_timeHurt;
+	void	SetDame(int dame);
+	void	SetHeal(int heal);
+	void	SetHealMax(int healMax);
+	void	SetDirection(int direction);
+	void	DameUp();
+	void	HealthUp();
 
 private:
-	int m_arrowId = 0;
-	Vector2 distanceHeroEnermy;
-	std::vector<std::shared_ptr<SpriteAnimation>> m_listState[2];
-	std::shared_ptr<Sprite2D> m_arrow[4];
-	std::shared_ptr<Sprite2D> m_skill;
-	std::shared_ptr<SpriteAnimation> m_pActiveState, m_pExplosion[3];
+	bool m_isTired;
+	GLint m_healMax;
+	GLint m_heal, m_speed, m_dame, m_direction;
+	GLint m_distanceAttack, m_radiusUltimate, m_flash;
+	GLfloat m_timeDelayAttack, m_timeDelayUltimate;
+	GLfloat m_timeDelayTired, m_timeTired, m_atan, m_dNeedMoved;
+	std::shared_ptr<Sprite2D> m_weapon;
 	std::shared_ptr<Constants> constants;
+	std::shared_ptr<SpriteAnimation> m_activeState, m_healthUp, m_dameUp;
+	std::vector<std::shared_ptr<Text>> m_listText;
+	std::vector<std::shared_ptr<SpriteAnimation>> m_listHeroState;
 };

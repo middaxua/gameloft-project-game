@@ -11,12 +11,12 @@ public:
 	bool	IsHandle();
 
 	bool	IsClicked(GLint x, GLint y, bool bIsPressed);
-	bool	IsEnable();
-	void	SetEnable(bool e);
+	//bool	IsEnable();
+	//void	SetEnable(bool e);
 
 private:
 	void	(*m_pBtClick)();
 	bool	m_isHandle;
-	bool	m_isEnable;
+	//bool	m_isEnable;
 
 };

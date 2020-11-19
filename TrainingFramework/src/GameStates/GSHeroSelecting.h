@@ -1,5 +1,10 @@
 #pragma once
 #include "gamestatebase.h"
+#include "SpriteAnimation.h"
+#include "GameButton.h"
+#include "Sprite2D.h"
+#include "Text.h"
+#include "GameHelper/Constants.h"
 #include <vector>
 
 class SpriteAnimation;

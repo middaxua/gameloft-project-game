@@ -29,6 +29,7 @@ SpriteAnimation::SpriteAnimation(std::shared_ptr<Models> model, std::shared_ptr<
 	m_frameTime = frameTime;
 	m_currentFrame = 0;
 	m_currentTime = 0.0f;
+	m_isEnable = true;
 
 	m_Vec3Position = Vector3(0, 0, 0);
 	m_iHeight = 50;
@@ -189,4 +190,20 @@ bool SpriteAnimation::IsLastFrame()
 void SpriteAnimation::ResetCurrentTime()
 {
 	m_currentTime = 0;
+}
+
+void SpriteAnimation::SetEnable(bool status)
+{
+	m_isEnable = status;
+}
+
+bool SpriteAnimation::IsEnable()
+{
+	return m_isEnable;
+}
+
+void SpriteAnimation::SetScaleX(GLint direction)
+{
+	m_Vec3Scale.x = direction * abs(m_Vec3Scale.x);
+	CaculateWorldMatrix();
 }

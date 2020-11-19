@@ -12,6 +12,7 @@ enum StateTypes
 	STATE_Menu,
 	STATE_Play,
 	STATE_HeroSelecting,
+	STATE_Setting,
 	STATE_Credit
 };
 

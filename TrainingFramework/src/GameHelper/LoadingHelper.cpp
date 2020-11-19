@@ -59,11 +59,14 @@ void LoadingHelper::LoadingPlay()
 
 void LoadingHelper::LoadingMusic()
 {
+	rm->AddSound("intro");
 	rm->AddSound("menu");
+	rm->AddSound("credit");
 	rm->AddSound("select_hero");
 	rm->AddSound("bgsound_play");
 	rm->AddSound("attack");
 	rm->AddSound("die");
 	rm->AddSound("hurt");
+	rm->AddSound("endgame");
 	rm->AddSound("ultimate");
 }

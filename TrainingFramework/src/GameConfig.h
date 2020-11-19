@@ -19,7 +19,7 @@
 #define GAME_DEBUG 1
 
 // define value
-#define PI 3.14f
+#define PI 3.1415f
 #define MAX_DEGREE 360
 // define vetex 
 #define VETEX_POSITION			(char*)0

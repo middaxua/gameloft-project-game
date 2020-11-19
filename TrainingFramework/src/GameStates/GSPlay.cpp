@@ -1,239 +1,81 @@
 #include "GSPlay.h"
 
-#include "Shaders.h"
-#include "Texture.h"
-#include "Models.h"
-#include "Camera.h"
-#include "Font.h"
-#include "Sprite2D.h"
-#include "Sprite3D.h"
-#include "Text.h"
-#include "SpriteAnimation.h"
-#include "GameButton.h"
-#include "Player.h"
-#include "Enermy.h"
-#include <ctime>
-
-extern int idHero;
-extern GLfloat SCALE;
 extern int screenWidth; //need get on Graphic engine
 extern int screenHeight; //need get on Graphic engine
-extern bool isMusicOn;
+extern bool isBgMusicOn;
+extern bool isEfMusicOn;
+extern bool isTextFloatOn;
+extern int idHero;
 
-std::vector<std::shared_ptr<Enermy>> m_listEnermy;
-std::shared_ptr<Player> player;
-int nearestEnermyId = -1, score = 0;
-bool isPause = false, isEnd = false;
-bool keyPressed = false;
-float centerMiniX, centerMiniY;
-float rx[50], ry[50];
+int attackSound, hurtSound, dieSound;
+int playSound, ultimateSound, endSound;
+int score;
+std::shared_ptr<Player> m_player;
+std::shared_ptr<Enermy> enermy;
+std::shared_ptr<Sprite2D> m_background;
 
 GSPlay::GSPlay()
 {
-	
+	constants = Constants::GetInstance();
+	m_keyPressed = m_isUltimate = false;
+	m_isPause = m_isEnd = false;
+	m_keyType = score = 0;
+	m_time = 0;
+	m_mapSize = { constants->mMAP_WIDTH, constants->mMAP_HEIGHT };
+	m_miniMapSize = m_mapSize / constants->mSCALE;
 }
 
-
-GSPlay::~GSPlay()
-{
-	m_listEnermy.clear();
-}
-
+GSPlay::~GSPlay() {}
 
 void GSPlay::Init()
 {
-	score = 0;
-	if (Player::HasInstance())
-		Player::FreeInstance();
-	player = Player::GetInstance();
+	// background
 	auto model = ResourceManagers::GetInstance()->GetModel("Sprite2D");
-	auto texture = ResourceManagers::GetInstance()->GetTexture("bg_game");
-
-	//BackGround
 	auto shader = ResourceManagers::GetInstance()->GetShader("TextureShader");
-	m_BackGround = std::make_shared<Sprite2D>(model, shader, texture);
-	m_BackGround->Set2DPosition(screenWidth / 2, screenHeight / 2);
-	m_BackGround->SetSize(MAP_WIDTH, MAP_HEIGHT);
-	//mini bG
-	miniW = MAP_WIDTH / SCALE;
-	miniH = MAP_HEIGHT / SCALE;
-	m_miniBackground = std::make_shared<Sprite2D>(model, shader, texture);
-	m_miniBackground->Set2DPosition(25 + miniW / 2, 130 + miniH / 2);
-	m_miniBackground->SetSize(miniW, miniH);
-
-	// Target scope
-	texture = ResourceManagers::GetInstance()->GetTexture("target_scope");
-	m_targetScope = std::make_shared<Sprite2D>(model, shader, texture);
-	m_targetScope->SetSize(42, 42);
-
-	// gray
-	texture = ResourceManagers::GetInstance()->GetTexture("gray");
-	gray = std::make_shared<Sprite2D>(model, shader, texture);
-	gray->Set2DPosition(screenWidth / 2, screenHeight / 2);
-	gray->SetSize(screenWidth, screenHeight);
-
-	// Mini hero
-	texture = ResourceManagers::GetInstance()->GetTexture("mini_hero");
-	miniHero = std::make_shared<Sprite2D>(model, shader, texture);
-	Vector2 k = m_BackGround->Get2DPosition();
-	centerMiniX = 27.5 + 0.5 * miniW;
-	centerMiniY = 132.5 + 0.5 * miniH;
-	miniHero->Set2DPosition(centerMiniX, centerMiniY);
-	miniHero->SetSize(5, 5);
-
-	// Radius skill
-	char r_ulti_skill[] = "ulti_skill_0";
-	r_ulti_skill[strlen(r_ulti_skill) - 1] = idHero + '0';
-	texture = ResourceManagers::GetInstance()->GetTexture(r_ulti_skill);
-	m_radiusSkill = std::make_shared<Sprite2D>(model, shader, texture);
-	m_radiusSkill->SetSize(300, 300);
-
-	// status shift
-	char status[] = "status_0";
-	for (int i = 1; i <= 5; ++i)
+	auto texture = ResourceManagers::GetInstance()->GetTexture("bg_game");
+	m_background = std::make_shared<Sprite2D>(model, shader, texture);
+	m_background->Set2DPosition(screenWidth / 2, screenHeight / 2);
+	m_background->SetSize(m_mapSize);
+	// init player and enermy
+	m_player = std::make_shared<Player>();
+	for (int i = 0; i < constants->NUM_ENERMY; ++i)
 	{
-		status[strlen(status) - 1] = i + '0';
-		texture = ResourceManagers::GetInstance()->GetTexture(status);
-		m_status[i] = std::make_shared<Sprite2D>(model, shader, texture);
-		m_status[i]->Set2DPosition(100, 120);
-		m_status[i]->SetSize(145, 10);
+		m_listEnermy.push_back(std::make_shared<Enermy>());
 	}
+	
+	// init sprite 2d
+	InitSprite2Ds();
+	InitGameButtons();
+	InitSpriteAnim();
+	InitText();
 
-	//button pause
-	texture = ResourceManagers::GetInstance()->GetTexture("button_pause");
-	button_pause = std::make_shared<GameButton>(model, shader, texture);
-	button_pause->Set2DPosition(60, 60);
-	button_pause->SetSize(60, 60);
-	button_pause->SetOnClick([]() {
-		isPause = true;
-	});
-
-	//button play
-	texture = ResourceManagers::GetInstance()->GetTexture("button_resume");
-	button_play = std::make_shared<GameButton>(model, shader, texture);
-	button_play->Set2DPosition(60, 60);
-	button_play->SetSize(60, 60);
-	button_play->SetOnClick([]() {
-		isPause = false;
-	});
-
-	//button quit
-	texture = ResourceManagers::GetInstance()->GetTexture("button_quit_2");
-	std::shared_ptr<GameButton> button = std::make_shared<GameButton>(model, shader, texture);
-	button->Set2DPosition(screenWidth - 60, 60);
-	button->SetSize(60, 60);
-	button->SetOnClick([]() {
-		isPause = isEnd = false;
-		GameStateMachine::GetInstance()->PopState();
-	});
-	m_listButton.push_back(button);
-
-	//button normal skill
-	char normal_skill[] = "button_skill_normal_0";
-	normal_skill[strlen(normal_skill) - 1] = idHero + '0';
-	texture = ResourceManagers::GetInstance()->GetTexture(normal_skill);
-	button = std::make_shared<GameButton>(model, shader, texture);
-	button->Set2DPosition(screenWidth - 130, screenHeight - 50);
-	button->SetSize(50, 50);
-	button->SetOnClick([]() {
-		if (!isPause)
-			player->Attack(nearestEnermyId);
-	});
-	m_listButton.push_back(button);
-
-	//popup endgame
-	texture = ResourceManagers::GetInstance()->GetTexture("popup_endgame");
-	m_endGame = std::make_shared<GameButton>(model, shader, texture);
-	m_endGame->Set2DPosition(screenWidth / 2, screenHeight / 2);
-	m_endGame->SetSize(300, 340);
-	m_endGame->SetOnClick([]() {
-		GameStateMachine::GetInstance()->PopState();
-	});
-
-	//button ulti skill
-	char ulti_skill[] = "button_skill_ulti_0";
-	ulti_skill[strlen(ulti_skill) - 1] = idHero + '0';
-	texture = ResourceManagers::GetInstance()->GetTexture(ulti_skill);
-	button_ulti = std::make_shared<GameButton>(model, shader, texture);
-	button_ulti->Set2DPosition(screenWidth - 55, screenHeight - 125);
-	button_ulti->SetSize(50, 50);
-	button_ulti->SetOnClick([]() {
-	});
-
-	//text game title
-	shader = ResourceManagers::GetInstance()->GetShader("TextShader");
-	std::shared_ptr<Font> font = ResourceManagers::GetInstance()->GetFont("arialbd");
-	m_score = std::make_shared< Text>(shader, font, "Score: 0", TEXT_COLOR::RED, 1.0);
-	m_score->Set2DPosition(Vector2(5, 25));
-
-	// enermy
-	m_listEnermy.clear();
-	float a, b;
-	srand(time(NULL));
-	for (int i = 0; i < NUM_OF_ENERMY; ++i) {
-		std::shared_ptr<Enermy> enermy = std::make_shared<Enermy>(rand()%3);
-		a = (rand() % (MAP_WIDTH - screenWidth) - MAP_WIDTH * 0.5 + screenWidth * 0.5);
-		b = (rand() % (MAP_HEIGHT - screenHeight) - MAP_HEIGHT * 0.5 + screenHeight * 0.5);
-		rx[i] = 27.5 + (0.5 + a / MAP_WIDTH) * miniW;
-		ry[i] = 132.5 + (0.5 + b / MAP_HEIGHT) * miniH;
-		enermy->CurrentState()->Set2DPosition(a + screenWidth / 2, b + screenHeight);
-		m_listEnermy.push_back(enermy);
-	}
-
-	// mini enermy
-	shader = ResourceManagers::GetInstance()->GetShader("TextureShader");
-	texture = ResourceManagers::GetInstance()->GetTexture("mini_enermy");
-	for (int i = 0; i < NUM_OF_ENERMY; ++i)
-	{
-		miniEnermy[i] = std::make_shared<Sprite2D>(model, shader, texture);
-		miniEnermy[i]->Set2DPosition(rx[i], ry[i]);
-		miniEnermy[i]->SetSize(5, 5);
-	}
-	// health bar
-	shader = ResourceManagers::GetInstance()->GetShader("Animation");
-	texture = ResourceManagers::GetInstance()->GetTexture("health_bar");
-	m_healthBar[0] = std::make_shared<SpriteAnimation>(model, shader, texture, 11, 1.0 / 11);
-	m_healthBar[0]->Set2DPosition(240, 235);
-	m_healthBar[0]->SetSize(100, 10);
-
-	Vector2 d = { 0, 65 };
-	for (int i = 1; i <= NUM_OF_ENERMY; ++i)
-	{
-		m_healthBar[i] = std::make_shared<SpriteAnimation>(model, shader, texture, 11, 1.0 / 11);
-		m_healthBar[i]->Set2DPosition(m_listEnermy[i - 1]->CurrentState()->Get2DPosition() - d);
-		m_healthBar[i]->SetSize(100, 10);
-	}
-
-	// kill cd
-	texture = ResourceManagers::GetInstance()->GetTexture("kill_cd");
-	for (int i = 0; i < 2; ++i)
-	{
-		m_killCD[i] = std::make_shared<SpriteAnimation>(model, shader, texture, 11, 1.0 / 11);
-		m_killCD[i]->Set2DPosition(screenWidth - 130 + 75 * i, screenHeight - 50 - 75*i);
-		m_killCD[i]->SetSize(50, 50);
-	}
-
-	if (isMusicOn)
-		ResourceManagers::GetInstance()->PlaySound("bgsound_play", true);
+	if (isBgMusicOn)
+		playSound = ResourceManagers::GetInstance()->PlaySound("bgsound_play", true);
 }
 
 void GSPlay::Exit()
 {
-	if (isMusicOn)
-		ResourceManagers::GetInstance()->PauseSound("bgsound_play");
+	if (isBgMusicOn)
+		ResourceManagers::GetInstance()->StopAllSound();
 }
-
 
 void GSPlay::Pause()
 {
-
+	m_isPause = true;
+	m_listButton[0]->SetEnable(false);
+	m_listButton[1]->SetEnable(true);
+	if (isBgMusicOn)
+		ResourceManagers::GetInstance()->PauseAllSound(true);
 }
 
 void GSPlay::Resume()
 {
-
+	m_isPause = false;
+	m_listButton[0]->SetEnable(true);
+	m_listButton[1]->SetEnable(false);
+	if (isBgMusicOn)
+		ResourceManagers::GetInstance()->PauseSound(playSound, false);
 }
-
 
 void GSPlay::HandleEvents()
 {
@@ -242,68 +84,34 @@ void GSPlay::HandleEvents()
 
 void GSPlay::HandleKeyEvents(int key, bool bIsPressed)
 {
-	if (!isPause)
+	if (!m_isPause && !m_player->IsDie())
 	{
-		if (player->m_isDie)
+		if (bIsPressed)
 		{
-			keyPressed = false;
-			keyType = 0;
+			if (key == KEY_MOVE_RIGHT || key == KEY_MOVE_LEFT || key == KEY_MOVE_BACKWORD || key == KEY_MOVE_FORWORD)
+			{
+				m_keyPressed = true;
+				m_keyType |= constants->KEY[key];
+			}
+			else if (key == KEY_LSHIFT)
+			{
+				m_keyType |= LSHIFT;
+			}
 		}
 		else
 		{
-			if (bIsPressed) {
-				if (key == KEY_MOVE_RIGHT || key == KEY_MOVE_LEFT || key == KEY_MOVE_BACKWORD || key == KEY_MOVE_FORWORD)
-				{
-					keyPressed = true;
-					switch (key)
-					{
-					case KEY_MOVE_RIGHT:
-						keyType |= RIGHT;
-						player->m_direction = 0;
-						break;
-					case KEY_MOVE_LEFT:
-						player->m_direction = 1;
-						keyType |= LEFT;
-						break;
-					case KEY_MOVE_BACKWORD:
-						keyType |= DOWN;
-						break;
-					case KEY_MOVE_FORWORD:
-						keyType |= UP;
-						break;
-					}
-				}
-				else if (key == KEY_LSHIFT)
-				{
-					keyType |= LSHIFT;
-				}
+			if (key == KEY_LSHIFT)
+			{
+				m_keyType &= ~LSHIFT;
 			}
-			else {
-				if (key == KEY_LSHIFT)
+			else
+			{
+				m_keyType &= ~constants->KEY[key];
+				if (m_keyType == 0)
 				{
-					keyType &= ~LSHIFT;
-				}
-				else {
-					switch (key)
-					{
-					case KEY_MOVE_RIGHT:
-						keyType &= ~RIGHT;
-						break;
-					case KEY_MOVE_LEFT:
-						keyType &= ~LEFT;
-						break;
-					case KEY_MOVE_BACKWORD:
-						keyType &= ~DOWN;
-						break;
-					case KEY_MOVE_FORWORD:
-						keyType &= ~UP;
-						break;
-					}
-					if (keyType == 0) {
-						if (player->IsMove())
-							player->Idle();
-						keyPressed = false;
-					}
+					if (m_player->IsMove())
+						m_player->Idle();
+					m_keyPressed = false;
 				}
 			}
 		}
@@ -312,341 +120,621 @@ void GSPlay::HandleKeyEvents(int key, bool bIsPressed)
 
 void GSPlay::HandleTouchEvents(int x, int y, bool bIsPressed)
 {
-	if (isEnd)
-		m_endGame->HandleTouchEvents(x, y, bIsPressed);
-	for (auto it : m_listButton)
+	if (!m_isPause && !m_player->IsDie())
 	{
-		if (!isUsingUlti)
+		for (auto it : m_listButton)
 		{
-			(it)->HandleTouchEvents(x, y, bIsPressed);
-			if ((it)->IsHandle()) break;
+			if (it->IsEnable() && !m_isUltimate)
+			{
+				(it)->HandleTouchEvents(x, y, bIsPressed);
+				if ((it)->IsHandle()) break;
+			}
 		}
+		// prepare ultimate if click button ultimate
+		if (m_listButton[4]->IsClicked(x, y, bIsPressed) && m_player->HasUltimate())
+		{
+			m_isUltimate = true;
+			m_listSprite2D[3]->SetEnable(true);
+		}
+		// using ultimate
+		if (!bIsPressed && m_isUltimate)
+		{
+			m_isUltimate = false;
+			m_listSprite2D[3]->SetEnable(false);
+			// anim ultimate
+			m_listSpriteAnim[2]->ResetCurrentTime();
+			m_listSpriteAnim[2]->SetCurrentFrame(0);
+			m_listSpriteAnim[2]->Set2DPosition(x, y);
+			m_listSpriteAnim[2]->SetEnable(true);
+
+			score += m_player->Ultimate(m_listEnermy, { 1.0f * x, 1.0f * y });
+			if (isEfMusicOn)
+				ultimateSound = ResourceManagers::GetInstance()->PlaySound("ultimate");
+		}
+		return;
 	}
-	if (button_ulti->IsClicked(x, y, bIsPressed) && player->m_timeUltimate == 0)
-		isUsingUlti = true;
-	if (!bIsPressed && isUsingUlti)
+	if (!m_isEnd)
 	{
-		if (!isPause)
+		for(int i = 0; i < 3; ++i)
 		{
-			isUsingUlti = false;
-			player->Ultimate({ (float)x, (float)y });
+			if (m_listButton[i]->IsEnable())
+			{
+				m_listButton[i]->HandleTouchEvents(x, y, bIsPressed);
+				if (m_listButton[i]->IsHandle()) break;
+			}
 		}
+		return;
 	}
-	if (isPause) button_play->HandleTouchEvents(x, y, bIsPressed);
-	else button_pause->HandleTouchEvents(x, y, bIsPressed);
+	// if end game, only handle button quit
+	m_listButton[2]->HandleTouchEvents(x, y, bIsPressed);
+	m_listButton[5]->HandleTouchEvents(x, y, bIsPressed);
 }
 
 void GSPlay::HandleMouseMoveEvents(int x, int y)
 {
-	if (isUsingUlti)
-		m_radiusSkill->Set2DPosition(x, y);
+	// button radius ultimate
+	if (m_isUltimate)
+		m_listSprite2D[3]->Set2DPosition(x, y);
 }
 
 void GSPlay::Update(float deltaTime)
 {
-	if (!isPause)
+	if (!m_isPause)
 	{
-		m_killCD[0]->SetCurrentFrame(10 - max(0, (int)(player->m_timeAttack * 10)));
-		m_killCD[1]->SetCurrentFrame(10 - (int)(player->m_timeUltimate));
-		m_healthBar[0]->SetCurrentFrame(player->m_heal / 10);
-		for (int i = 0; i < NUM_OF_ENERMY; ++i)
+		// update hero and enermy
+		m_player->Update(deltaTime);
+		for (auto e : m_listEnermy)
 		{
-			if (!m_listEnermy[i]->m_isDie)
+			e->Update(m_player, deltaTime);
+		}
+		// if hero isnt die, he can move and find enermy
+		if (!m_player->IsDie())
+		{
+			// processing hero move
+			if (!m_player->IsAttack())
 			{
-				if (m_listEnermy[i]->isBoss)
-					m_healthBar[i + 1]->SetCurrentFrame(m_listEnermy[i]->m_heal / 10 / 3);
-				else
-					m_healthBar[i + 1]->SetCurrentFrame(m_listEnermy[i]->m_heal / 10);
-				Vector2 p = (m_listEnermy[i]->Get2DPosition() - m_BackGround->Get2DPosition());
-				miniEnermy[i]->Set2DPosition(27.5 + (0.5 + p.x / MAP_WIDTH) * miniW, 132.5 + (0.5 + p.y / MAP_HEIGHT) * miniH);
-				Vector2 d = { 0, 65 };
-				m_healthBar[i + 1]->Set2DPosition(m_listEnermy[i]->Get2DPosition() - d);
+				if (m_keyPressed)
+				{
+					if (m_keyType & LSHIFT && !m_player->IsTired())
+						m_player->Run();
+					else
+						m_player->Walk();
+					MoveCharacter(deltaTime * m_player->GetSpeed());
+				}
+			}
+			// find nearest enermy
+			enermy = FindNearestEnermy();
+			if (enermy)
+			{
+				m_listSprite2D[1]->SetEnable(true);
+				m_listSprite2D[1]->Set2DPosition(enermy->Get2DPosition());
 			}
 			else
 			{
-				if (m_listEnermy[i]->CurrentState()->IsLastFrame())
-				{
-					int a = (rand() % (MAP_WIDTH - screenWidth) - MAP_WIDTH * 0.5 + screenWidth * 0.5);
-					int b = (rand() % (MAP_HEIGHT - screenHeight) - MAP_HEIGHT * 0.5 + screenHeight * 0.5);
-					rx[i] = 27.5 + (0.5 + a / MAP_WIDTH) * miniW;
-					ry[i] = 132.5 + (0.5 + b / MAP_HEIGHT) * miniH;
-					m_listEnermy[i]->CurrentState()->Set2DPosition(a + screenWidth / 2, b + screenHeight);
-					m_listEnermy[i]->Idle();
-					m_listEnermy[i]->m_isDie = false;
-					int boss = rand() % 3;
-					if (boss == 0)
-						m_listEnermy[i]->isBoss = true;
-					m_listEnermy[i]->m_heal = (boss != 0) ? 100 : 300;
-				}
+				m_listSprite2D[1]->SetEnable(false);
 			}
+			// update spr2d
+			UpdateSprite2D();
+			// update anim
+			UpdateAnim(deltaTime);
+			// update text
+			UpdateText();
+			// generate random enermy
+			RandomEnermy(deltaTime);
 		}
-
-		player->Update(deltaTime);
-		if ((keyType & LSHIFT) == 0 && player->m_timeTired < 5)
+		else // enermy win
 		{
-			player->m_timeTired += deltaTime;
-			if (player->m_timeTired > 5)
-			{
-				player->m_timeTired = 5;
-				player->m_isTired = false;
-			}
+			EnermyWin();
 		}
-
-		// xu ly nhan vat di chuyen
-		if (!player->m_isAttacking)
-		{
-			if (keyPressed) {
-				if (keyType & LSHIFT && !player->m_isTired)
-				{
-					player->Run();
-					MoveCharacter(m_run_speed * deltaTime);
-					player->m_timeTired -= deltaTime;
-					if (player->m_timeTired < 0)
-					{
-						player->m_timeTired = 0;
-						player->m_isTired = true;
-					}
-				}
-				else
-				{
-					player->Walk();
-					MoveCharacter(m_walk_speed * deltaTime);
-				}
-			}
-			// Tim enermy gan nhat
-			if (!player->m_isDie)
-			{
-				FindNearestEnermy();
-				if (nearestEnermyId != -1) {
-					m_targetScope->Set2DPosition(m_listEnermy[nearestEnermyId]->CurrentState()->Get2DPosition());
-				}
-			}
-		}
-		for (auto obj : m_listEnermy)
-		{
-			obj->Update(deltaTime);
-		}
+		return;
 	}
-	if (isEnd)
+	if (m_player->IsDie())
 	{
-		for (auto obj : m_listEnermy)
+		for (auto e : m_listEnermy)
 		{
-			obj->Update(deltaTime);
+			e->Update(m_player, deltaTime);
 		}
 	}
+	
 }
 
 void GSPlay::Draw()
 {
-	m_BackGround->Draw();
-	if (player->m_timeDisplayEffectUltimate > 0)
+	m_background->Draw();
+	// draw enermy higher than hero
+	for (auto e : m_listEnermy)
 	{
-		player->m_effectUltimate->Draw();
+		if (e->Get2DPosition().y <= m_player->Get2DPosition().y)
+			e->Draw();
 	}
-	//// draw rocks
-	//for (auto it : m_listSprite2D)
-	//{
-	//	it->Draw();
-	//}
-	for (auto obj : m_listEnermy)
+	m_player->Draw();
+	// draw enermy shorter than hero
+	for (auto e : m_listEnermy)
 	{
-		if (obj->CurrentState()->Get2DPosition().y < player->CurrentState()->Get2DPosition().y)
-			obj->Draw();
+		if (e->Get2DPosition().y > m_player->Get2DPosition().y)
+			e->Draw();
 	}
-	player->Draw();
-	for (auto obj : m_listEnermy)
+	// draw health bar anim
+	for (auto anim : m_listHealthBarAnim)
 	{
-		if (obj->CurrentState()->Get2DPosition().y >= player->CurrentState()->Get2DPosition().y)
-			obj->Draw();
+		if (anim->IsEnable())
+			anim->Draw();
 	}
-	if (!isEnd && nearestEnermyId != -1)
-		m_targetScope->Draw();
-	if (isUsingUlti)
-		m_radiusSkill->Draw();
-	if (!player->m_isDie)
-		m_healthBar[0]->Draw();
-	for (int i = 1; i <= NUM_OF_ENERMY; ++i)
+	// draw sprite 2d
+	for (auto spr2d : m_listSprite2D)
 	{
-		if (!m_listEnermy[i - 1]->m_isDie)
-			m_healthBar[i]->Draw();
+		if (spr2d->IsEnable())
+			spr2d->Draw();
 	}
-	m_miniBackground->Draw();
-	for (int i = 0; i < NUM_OF_ENERMY; ++i) {
-		if (!m_listEnermy[i]->m_isDie)
-			miniEnermy[i]->Draw();
-	}
-	miniHero->Draw();
-	//draw status
-	if (player->m_timeTired > 1)
-		m_status[(int)player->m_timeTired]->Draw();
-	// draw button pause and resume
-	if (isPause) button_play->Draw();
-	else button_pause->Draw();
-	// draw buttons
-	for (auto it : m_listButton)
+	for (auto miniEnermy : m_listMiniEnermy)
 	{
-		it->Draw();
+		if (miniEnermy->IsEnable())
+			miniEnermy->Draw();
 	}
-	m_score->setText("Score: " + std::to_string(score));
-	m_score->Draw();
-	button_ulti->Draw();
-	m_killCD[0]->Draw();
-	m_killCD[1]->Draw();
-	if (isEnd)
+	m_miniHero->Draw();
+	// draw button
+	for (auto b : m_listButton)
 	{
-		gray->Draw();
-		m_endGame->Draw();
-		m_score->setText(std::to_string(score));
-		Vector2 d = { -10, 25 };
-		m_score->Set2DPosition(m_endGame->Get2DPosition() + d);
-		m_score->Draw();
+		if (b->IsEnable())
+			b->Draw();
+	}
+	// draw sprite anim
+	for (auto anim : m_listSpriteAnim)
+	{
+		if (anim->IsEnable())
+			anim->Draw();
+	}
+	if (isTextFloatOn)
+	{
+		// draw text health
+		for (auto text : m_listText)
+		{
+			if (text->IsEnable())
+				text->Draw();
+		}
+	}
+	// draw if endgame
+	if (m_player->IsDie())
+	{
+		m_grayBG->Draw();
+		m_listButton[2]->Draw();
+		m_listButton[5]->Draw();
+		m_stunHero->Draw();
+	}
+	// draw text score
+	m_scoreText->Draw();
+}
+
+void GSPlay::UpdateSprite2D()
+{
+	Vector2 margin = { 50, screenHeight * 1.0f - 50 };
+	// update mini hero
+	Vector2 p = ConvertPosEnermy(m_player->Get2DPosition(), margin);
+	m_miniHero->Set2DPosition(p);
+	// update mini enermy
+	for (int i = 0; i < m_listEnermy.size(); ++i)
+	{
+		if (!m_listEnermy[i]->IsDie())
+		{
+			Vector2 p = ConvertPosEnermy(m_listEnermy[i]->Get2DPosition(), margin);
+			m_listMiniEnermy[i]->Set2DPosition(p);
+			m_listMiniEnermy[i]->SetEnable(true);
+		}
+		else
+			m_listMiniEnermy[i]->SetEnable(false);
 	}
 }
 
-void GSPlay::MoveEffect(std::shared_ptr<SpriteAnimation> effect, int distance)
+void GSPlay::UpdateAnim(float deltaTime)
 {
-	Vector2 oldPos = effect->Get2DPosition();
-	Vector2 newPos = oldPos;
-	if (keyType & LEFT)
+	// update kill cd
+	m_listSpriteAnim[0]->SetCurrentFrame(10 - (int)(m_player->GetTimeDelayAttack() * 10));
+	m_listSpriteAnim[1]->SetCurrentFrame(10 - (int)(m_player->GetTimeDelayUltimate() / constants->hTIME_ULTIMATE * 10));
+	// update ultimate effect
+	if (m_listSpriteAnim[2]->IsLastFrame())
+		m_listSpriteAnim[2]->SetEnable(false);
+	else
+		m_listSpriteAnim[2]->Update(deltaTime);
+	// status bar
+	m_listSpriteAnim[3]->SetEnable(!m_player->NeedTimeTired());
+	m_listSpriteAnim[3]->SetCurrentFrame(max(0, (int)m_player->GetTimeTired() - 1));
+	// health bar hero
+	m_listSpriteAnim[4]->SetCurrentFrame(10 * m_player->GetHeal() / m_player->GetHealMax());
+	// health bar enermy
+	for (int i = 0; i < m_listHealthBarAnim.size(); ++i)
 	{
-		newPos.x = oldPos.x + distance;
-		if (MAP_WIDTH / 2 - newPos.x < 0)
-			newPos.x = MAP_WIDTH / 2;
-	}
-	else if (keyType & RIGHT)
-	{
-		newPos.x = oldPos.x - distance;
-		if (MAP_WIDTH / 2 + newPos.x < screenWidth)
-			newPos.x = screenWidth - MAP_WIDTH / 2;
-	}
-	if (keyType & DOWN)
-	{
-		newPos.y = oldPos.y - distance;
-		if (MAP_HEIGHT / 2 + newPos.y < screenHeight)
-			newPos.y = screenHeight - MAP_HEIGHT / 2;
-	}
-	else if (keyType & UP)
-	{
-		newPos.y = oldPos.y + distance;
-		if (MAP_HEIGHT / 2 - newPos.y < 0)
-			newPos.y = MAP_HEIGHT / 2;
-	}
-	effect->Set2DPosition(newPos);
-}
-
-void GSPlay::MoveEnermy(int distance)
-{
-	if (keyType & LEFT)
-	{
-		for (int i = 0; i < m_listEnermy.size(); ++i)
+		if (m_listEnermy[i]->IsDie())
 		{
-			Vector2 oldPos = m_listEnermy[i]->CurrentState()->Get2DPosition();
-			Vector2 newPos = oldPos;
-			newPos.x = oldPos.x + distance;
-			if (MAP_WIDTH / 2 - newPos.x < 0)
-				newPos.x = MAP_WIDTH / 2;
-			m_listEnermy[i]->CurrentState()->Set2DPosition(newPos);
+			m_listHealthBarAnim[i]->SetEnable(false);
 		}
-	}
-	else if (keyType & RIGHT)
-	{
-		for (int i = 0; i < m_listEnermy.size(); ++i)
+		else
 		{
-			Vector2 oldPos = m_listEnermy[i]->CurrentState()->Get2DPosition();
-			Vector2 newPos = oldPos;
-			newPos.x = oldPos.x - distance;
-			if (MAP_WIDTH / 2 + newPos.x < screenWidth)
-				newPos.x = screenWidth - MAP_WIDTH / 2;
-			m_listEnermy[i]->CurrentState()->Set2DPosition(newPos);
-		}
-	}
-	if (keyType & DOWN)
-	{
-		for (int i = 0; i < m_listEnermy.size(); ++i)
-		{
-			Vector2 oldPos = m_listEnermy[i]->CurrentState()->Get2DPosition();
-			Vector2 newPos = oldPos;
-			newPos.y = oldPos.y - distance;
-			if (MAP_HEIGHT / 2 + newPos.y < screenHeight)
-				newPos.y = screenHeight - MAP_HEIGHT / 2;
-			m_listEnermy[i]->CurrentState()->Set2DPosition(newPos);
-		}
-	}
-	else if (keyType & UP)
-	{
-		for (int i = 0; i < m_listEnermy.size(); ++i)
-		{
-			Vector2 oldPos = m_listEnermy[i]->CurrentState()->Get2DPosition();
-			Vector2 newPos = oldPos;
-			newPos.y = oldPos.y + distance;
-			if (MAP_HEIGHT / 2 - newPos.y < 0)
-				newPos.y = MAP_HEIGHT / 2;
-			m_listEnermy[i]->CurrentState()->Set2DPosition(newPos);
+			int percentHeal = 10 * m_listEnermy[i]->GetHeal() / m_listEnermy[i]->GetHealMax();
+			m_listHealthBarAnim[i]->SetCurrentFrame(percentHeal);
+			// update position health bar
+			Vector2 ePos = m_listEnermy[i]->Get2DPosition();
+			m_listHealthBarAnim[i]->Set2DPosition(ePos - Vector2(0, 75));
+			m_listHealthBarAnim[i]->SetEnable(true);
 		}
 	}
 }
 
-void GSPlay::MoveMap(int distance)
+void GSPlay::UpdateText()
 {
-	Vector2 oldPos = m_BackGround->Get2DPosition();
-	Vector2 newPos = oldPos;
-	if (keyType & LEFT)
+	// update text score
+	m_scoreText->setText("Score: " + std::to_string(score));
+	if (isTextFloatOn)
 	{
-		newPos.x = oldPos.x + distance;
-		if (MAP_WIDTH / 2 - newPos.x < 0)
-			newPos.x = MAP_WIDTH / 2;
-	}
-	else if (keyType & RIGHT)
-	{
-		newPos.x = oldPos.x - distance;
-		if (MAP_WIDTH / 2 + newPos.x < screenWidth)
-			newPos.x = screenWidth - MAP_WIDTH / 2;
-	}
-	if (keyType & DOWN)
-	{
-		newPos.y = oldPos.y - distance;
-		if (MAP_HEIGHT / 2 + newPos.y < screenHeight)
-			newPos.y = screenHeight - MAP_HEIGHT / 2;
-	}
-	else if (keyType & UP)
-	{
-		newPos.y = oldPos.y + distance;
-		if (MAP_HEIGHT / 2 - newPos.y < 0)
-			newPos.y = MAP_HEIGHT / 2;
-	}
-	m_BackGround->Set2DPosition(newPos);
-	float x = miniW * (screenWidth * 0.5 - newPos.x) / MAP_WIDTH;
-	float y = miniH * (screenHeight * 0.5 - newPos.y) / MAP_HEIGHT;
-	miniHero->Set2DPosition(centerMiniX + x, centerMiniY + y);
-	/*for (int i = 0; i < NUM_OF_ENERMY; ++i) {
-		miniEnermy[i]->Set2DPosition(rx[i] - x, ry[i] - y);
-	}*/
-}
-
-void GSPlay::MoveCharacter(int distance)
-{
-	MoveMap(distance);
-	MoveEnermy(distance);
-	MoveEffect(player->m_effectUltimate, distance);
-}
-
-void GSPlay::SetNewPostionForBullet()
-{
-}
-
-void GSPlay::FindNearestEnermy()
-{
-	nearestEnermyId = -1;
-	int minDistance = player->m_distanceAttack[idHero];
-	Vector2 heroPos = player->CurrentState()->Get2DPosition();
-	for (int i = 0; i < m_listEnermy.size(); ++i) {
-		if (!m_listEnermy[i]->m_isDie) {
-			Vector2 enermyPos = m_listEnermy[i]->CurrentState()->Get2DPosition();
-			int distance = (heroPos - enermyPos).Length();
-			if (distance < minDistance) {
-				minDistance = distance;
-				nearestEnermyId = i;
+		// update text health hero
+		m_listText[constants->NUM_ENERMY]->setText(std::to_string(m_player->GetHeal()) + "/" + std::to_string(m_player->GetHealMax()));
+		m_listText[constants->NUM_ENERMY]->Set2DPosition(m_player->Get2DPosition() - Vector2(25, 70));
+		// update text health enermy
+		for (int i = 0; i < m_listEnermy.size(); ++i)
+		{
+			if (!m_listEnermy[i]->IsDie())
+			{
+				m_listText[i]->setText(m_listEnermy[i]->GetStringHeal());
+				m_listText[i]->Set2DPosition(m_listEnermy[i]->Get2DPosition() - Vector2(25, 70));
+				m_listText[i]->SetEnable(true);
+			}
+			else
+			{
+				m_listText[i]->SetEnable(false);
 			}
 		}
 	}
+}
+
+Vector2 GSPlay::ConvertPosEnermy(Vector2 pos, Vector2 margin)
+{
+	Vector2 mg = margin + Vector2(m_miniMapSize.x, -m_miniMapSize.y) * 0.5;
+	Vector2 p = (pos - m_background->Get2DPosition()) / constants->mSCALE;
+	return mg + Vector2(p.x, p.y);
+}
+
+Vector2 GSPlay::ConvertPosHero(Vector2 pos, Vector2 margin)
+{
+	Vector2 mg = margin + Vector2(m_miniMapSize.x, -m_miniMapSize.y) * 0.5;
+	Vector2 p = (pos - m_background->Get2DPosition()) / constants->mSCALE;
+	return mg + Vector2(p.x, p.y);
+}
+
+void GSPlay::RandomEnermy(float deltaTime)
+{
+	m_time += deltaTime;
+	if (m_time >= constants->pTIME_RANDOM_ENERMY)
+	{
+		for (auto e : m_listEnermy)
+		{
+			if (e->IsDie())
+			{
+				e->Reset(score);
+			}
+		}
+		m_time -= constants->pTIME_RANDOM_ENERMY;
+	}
+}
+
+void GSPlay::EnermyWin()
+{
+	// hide health bar
+	m_listSpriteAnim[4]->SetEnable(false);
+	// hide text heal
+	if (isTextFloatOn)
+		m_listText[constants->NUM_ENERMY]->SetEnable(false);
+	// display end game
+	// button exit
+	m_listButton[2]->Set2DPosition(screenWidth / 2 + 120, screenHeight - 200);
+	m_listButton[2]->SetSize(120, 120);
+	// button replay
+	m_listButton[5]->Set2DPosition(screenWidth / 2 - 120, screenHeight - 200);
+	// text score
+	auto shader = ResourceManagers::GetInstance()->GetShader("TextShader");
+	auto font = ResourceManagers::GetInstance()->GetFont("arialbd");
+	m_scoreText = std::make_shared<Text>(shader, font, "Score: " + std::to_string(score), TEXT_COLOR::PURPLE, 3);
+	m_scoreText->Set2DPosition(screenWidth / 2 - 175, 175);
+
+	for (auto e : m_listEnermy)
+	{
+		if (!e->IsDie())
+			e->Win();
+	}
+	if (m_player->IsLastFrame())
+	{
+		m_isPause = m_isEnd = true;
+		ResourceManagers::GetInstance()->StopAllSound();
+		if (isBgMusicOn)
+			endSound = ResourceManagers::GetInstance()->PlaySound("endgame", true);
+	}
+}
+
+void GSPlay::MoveEnermy(Vector2 dVector)
+{
+	for (auto e : m_listEnermy)
+	{
+		Vector2 oldPos = e->Get2DPosition();
+		e->Set2DPosition(oldPos + dVector);
+	}
+}
+
+Vector2 GSPlay::MoveMap(float d)
+{
+	// pos background
+	Vector2 oldPos = m_background->Get2DPosition();
+	Vector2 newPos = oldPos;
+	if (m_keyType & LEFT)
+	{
+		m_player->SetDirection(D_LEFT);
+		newPos.x = oldPos.x + d;
+		if (m_mapSize.x * 0.5 - newPos.x < 0)
+			newPos.x = m_mapSize.x * 0.5;
+	}
+	else if (m_keyType & RIGHT)
+	{
+		m_player->SetDirection(D_RIGHT);
+		newPos.x = oldPos.x - d;
+		if (m_mapSize.x * 0.5 + newPos.x < screenWidth)
+			newPos.x = screenWidth - m_mapSize.x * 0.5;
+	}
+	if (m_keyType & DOWN)
+	{
+		newPos.y = oldPos.y - d;
+		if (m_mapSize.y * 0.5 + newPos.y < screenHeight)
+			newPos.y = screenHeight - m_mapSize.y * 0.5;
+	}
+	else if (m_keyType & UP)
+	{
+		newPos.y = oldPos.y + d;
+		if (m_mapSize.y * 0.5 - newPos.y < 0)
+			newPos.y = m_mapSize.y * 0.5;
+	}
+	Vector2 dVector = newPos - oldPos;
+	if (dVector.x != 0 && dVector.y != 0)
+	{
+		dVector *= 0.7071f;
+		m_background->Set2DPosition(oldPos + dVector);
+	}
+	else
+		m_background->Set2DPosition(newPos);
+	return dVector;
+}
+
+void GSPlay::MoveCharacter(float d)
+{
+	Vector2 dVector = MoveMap(d);
+	MoveEnermy(dVector);
+}
+
+void GSPlay::InitSprite2Ds()
+{
+	auto model = ResourceManagers::GetInstance()->GetModel("Sprite2D");
+	auto shader = ResourceManagers::GetInstance()->GetShader("TextureShader");
+
+	// gray color
+	auto texture = ResourceManagers::GetInstance()->GetTexture("gray");
+	m_grayBG = std::make_shared<Sprite2D>(model, shader, texture);
+	m_grayBG->Set2DPosition(screenWidth / 2, screenHeight / 2);
+	m_grayBG->SetSize(screenWidth, screenHeight);
+
+	// stun hero
+	std::string hNames[3] = { "archer", "icewizard", "knight" };
+	texture = ResourceManagers::GetInstance()->GetTexture(hNames[idHero] + "_stun");
+	m_stunHero = std::make_shared<Sprite2D>(model, shader, texture);
+	m_stunHero->Set2DPosition(screenWidth / 2, screenHeight - 400);
+	m_stunHero->SetSize(320, 320);
+
+	// mini background [0]
+	Vector2 margin = { 50, screenHeight * 1.0f - 50 };
+	texture = ResourceManagers::GetInstance()->GetTexture("bg_game");
+	auto spr2d = std::make_shared<Sprite2D>(model, shader, texture);
+	spr2d->Set2DPosition(margin.x + m_miniMapSize.x * 0.5, margin.y - m_miniMapSize.y * 0.5);
+	spr2d->SetSize(m_miniMapSize);
+	m_listSprite2D.push_back(spr2d);
+
+	// target scope [1]
+	texture = ResourceManagers::GetInstance()->GetTexture("target_scope");
+	spr2d = std::make_shared<Sprite2D>(model, shader, texture);
+	spr2d->SetSize(50, 50);
+	spr2d->SetEnable(false);
+	m_listSprite2D.push_back(spr2d);
+
+	// gray color [2]
+	texture = ResourceManagers::GetInstance()->GetTexture("gray");
+	spr2d = std::make_shared<Sprite2D>(model, shader, texture);
+	spr2d->Set2DPosition(screenWidth / 2, screenHeight / 2);
+	spr2d->SetSize(screenWidth, screenHeight);
+	spr2d->SetEnable(false);
+	m_listSprite2D.push_back(spr2d);
+
+	// radius ultimate [3]
+	texture = ResourceManagers::GetInstance()->GetTexture("radius_ultimate");
+	spr2d = std::make_shared<Sprite2D>(model, shader, texture);
+	spr2d->SetSize(2 * constants->hRADIUS_ULTIMATE, 2 * constants->hRADIUS_ULTIMATE);
+	spr2d->SetEnable(false);
+	m_listSprite2D.push_back(spr2d);
+
+	// list mini enermy
+	texture = ResourceManagers::GetInstance()->GetTexture("red_dot");
+	for (auto e : m_listEnermy)
+	{
+		spr2d = std::make_shared<Sprite2D>(model, shader, texture);
+		spr2d->Set2DPosition(ConvertPosEnermy(e->Get2DPosition(), margin));
+		spr2d->SetSize(5, 5);
+		m_listMiniEnermy.push_back(spr2d);
+	}
+	// mini hero
+	texture = ResourceManagers::GetInstance()->GetTexture("green_dot");
+	m_miniHero = std::make_shared<Sprite2D>(model, shader, texture);
+	m_miniHero->Set2DPosition(ConvertPosEnermy(m_player->Get2DPosition(), margin));
+	m_miniHero->SetSize(5, 5);
+}
+
+void GSPlay::InitGameButtons()
+{
+	auto model = ResourceManagers::GetInstance()->GetModel("Sprite2D");
+	auto shader = ResourceManagers::GetInstance()->GetShader("TextureShader");
+
+	// button pause [0]
+	auto texture = ResourceManagers::GetInstance()->GetTexture("button_pause");
+	auto button = std::make_shared<GameButton>(model, shader, texture);
+	button->Set2DPosition(60, 60);
+	button->SetSize(60, 60);
+	button->SetOnClick([]() {
+		GameStateMachine::GetInstance()->CurrentState()->Pause();
+	});
+	m_listButton.push_back(button);
+
+	// button play [1]
+	texture = ResourceManagers::GetInstance()->GetTexture("button_resume");
+	button = std::make_shared<GameButton>(model, shader, texture);
+	button->Set2DPosition(60, 60);
+	button->SetSize(60, 60);
+	button->SetOnClick([]() {
+		GameStateMachine::GetInstance()->CurrentState()->Resume();
+	});
+	button->SetEnable(false);
+	m_listButton.push_back(button);
+
+	// button quit [2]
+	texture = ResourceManagers::GetInstance()->GetTexture("button_quit_2");
+	button = std::make_shared<GameButton>(model, shader, texture);
+	button->Set2DPosition(screenWidth - 60, 60);
+	button->SetSize(60, 60);
+	button->SetOnClick([]() {
+		GameStateMachine::GetInstance()->PopState();
+	});
+	m_listButton.push_back(button);
+
+	// button attack skill [3]
+	std::string hNames[3] = { "archer", "icewizard", "knight" };
+	texture = ResourceManagers::GetInstance()->GetTexture("button_attack_" + hNames[idHero]);
+	button = std::make_shared<GameButton>(model, shader, texture);
+	button->Set2DPosition(screenWidth - 130, screenHeight - 50);
+	button->SetSize(75, 75);
+	button->SetOnClick([]() {
+		if (m_player->Attackable())
+		{
+			if (isEfMusicOn)
+				attackSound = ResourceManagers::GetInstance()->PlaySound("attack");
+			score += m_player->Attack(enermy);
+		}
+	});
+	m_listButton.push_back(button);
+
+	//button ultimate skill [4]
+	texture = ResourceManagers::GetInstance()->GetTexture("button_ultimate_" + hNames[idHero]);
+	button = std::make_shared<GameButton>(model, shader, texture);
+	button->Set2DPosition(screenWidth - 55, screenHeight - 125);
+	button->SetSize(75, 75);
+	button->SetOnClick([]() {
+	});
+	m_listButton.push_back(button);
+
+	//button replay [5]
+	texture = ResourceManagers::GetInstance()->GetTexture("button_replay");
+	button = std::make_shared<GameButton>(model, shader, texture);
+	button->SetSize(120, 120);
+	button->SetOnClick([]() {
+		GameStateMachine::GetInstance()->PopState();
+		GameStateMachine::GetInstance()->PushState(StateTypes::STATE_Play);
+	});
+	button->SetEnable(false);
+	m_listButton.push_back(button);
+}
+
+void GSPlay::InitSpriteAnim()
+{
+	auto model = ResourceManagers::GetInstance()->GetModel("Sprite2D");
+	auto shader = ResourceManagers::GetInstance()->GetShader("Animation");
+
+	// kill cd attack [0]
+	auto texture = ResourceManagers::GetInstance()->GetTexture("kill_cd");
+	auto anim = std::make_shared<SpriteAnimation>(model, shader, texture, 11, 1.0f / 11);
+	anim->Set2DPosition(screenWidth - 130, screenHeight - 50);
+	anim->SetSize(75, 75);
+	m_listSpriteAnim.push_back(anim);
+
+	// kill cd ultimate [1]
+	texture = ResourceManagers::GetInstance()->GetTexture("kill_cd");
+	anim = std::make_shared<SpriteAnimation>(model, shader, texture, 11, 1.0f / 11);
+	anim->Set2DPosition(screenWidth - 55, screenHeight - 125);
+	anim->SetSize(75, 75);
+	m_listSpriteAnim.push_back(anim);
+
+	// ultimate [2]
+	std::string hNames[3] = { "archer", "icewizard", "knight" };
+	texture = ResourceManagers::GetInstance()->GetTexture("ultimate_" + hNames[idHero]);
+	anim = std::make_shared<SpriteAnimation>(model, shader, texture, 4, 0.25f);
+	anim->SetSize(300, 300);
+	anim->SetEnable(false);
+	m_listSpriteAnim.push_back(anim);
+
+	// status bar [3]
+	texture = ResourceManagers::GetInstance()->GetTexture("status_bar");
+	anim = std::make_shared<SpriteAnimation>(model, shader, texture, 5, 0.2f);
+	anim->Set2DPosition(102.5, 125);
+	anim->SetSize(145, 10);
+	m_listSpriteAnim.push_back(anim);
+
+	// health bar for hero [4]
+	texture = ResourceManagers::GetInstance()->GetTexture("health_bar");
+	anim = std::make_shared<SpriteAnimation>(model, shader, texture, 11, 1.0f / 11);
+	anim->Set2DPosition(m_player->Get2DPosition() - Vector2(0, 75));
+	anim->SetSize(100, 13);
+	m_listSpriteAnim.push_back(anim);
+
+	// health bar for enermy
+	for (auto e : m_listEnermy)
+	{
+		texture = ResourceManagers::GetInstance()->GetTexture("health_bar");
+		anim = std::make_shared<SpriteAnimation>(model, shader, texture, 11, 1.0f / 11);
+		anim->Set2DPosition(e->Get2DPosition() - Vector2(0, 75));
+		anim->SetSize(100, 13);
+		m_listHealthBarAnim.push_back(anim);
+	}
+}
+
+void GSPlay::InitText()
+{
+	auto shader = ResourceManagers::GetInstance()->GetShader("TextShader");
+	// text score game
+	std::shared_ptr<Font> font = ResourceManagers::GetInstance()->GetFont("arialbd");
+	m_scoreText = std::make_shared< Text>(shader, font, "Score: 0", TEXT_COLOR::RED, 1.5);
+	m_scoreText->Set2DPosition(screenWidth / 2 - 75, 60);
+
+	if (isTextFloatOn)
+	{
+		for (auto e : m_listEnermy)
+		{
+			std::shared_ptr<Font> font = ResourceManagers::GetInstance()->GetFont("arialbd");
+			auto text = std::make_shared< Text>(shader, font, e->GetStringHeal(), TEXT_COLOR::PURPLE, 0.55);
+			text->Set2DPosition(e->Get2DPosition() - Vector2(25, 70));
+			m_listText.push_back(text);
+		}
+		// health text hero [NUM_ENERMY]
+		font = ResourceManagers::GetInstance()->GetFont("arialbd");
+		auto text = std::make_shared< Text>(shader, font, std::to_string(m_player->GetHeal()) + "/" + std::to_string(m_player->GetHealMax()), TEXT_COLOR::PURPLE, 0.55);
+		text->Set2DPosition(m_player->Get2DPosition() - Vector2(25, 70));
+		m_listText.push_back(text);
+	}
+}
+
+std::shared_ptr<Enermy> GSPlay::FindNearestEnermy()
+{
+	enermy = nullptr;
+	int dAttack = m_player->GetDistanceAttack();
+	Vector2 heroPos = m_player->Get2DPosition();
+	for (auto e : m_listEnermy)
+	{
+		if (!e->IsDie()) {
+			Vector2 enermyPos = e->Get2DPosition();
+			int d = (heroPos - enermyPos).Length();
+			if (d < dAttack)
+			{
+				dAttack = d;
+				enermy = e;
+			}
+		}
+	}
+	return enermy;
 }

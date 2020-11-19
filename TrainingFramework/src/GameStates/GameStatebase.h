@@ -2,7 +2,6 @@
 #include "GameStateMachine.h"
 #include "GameManager/ResourceManagers.h"
 
-
 class GameStateBase
 {
 public:

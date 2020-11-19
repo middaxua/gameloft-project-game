@@ -3,6 +3,9 @@
 
 extern int screenWidth; //need get on Graphic engine
 extern int screenHeight; //need get on Graphic engine
+extern bool isBgMusicOn;
+
+int creditSound;
 
 GSCredit::GSCredit()
 {
@@ -16,10 +19,10 @@ GSCredit::~GSCredit()
 void GSCredit::Init()
 {
 	auto model = ResourceManagers::GetInstance()->GetModel("Sprite2D");
-	auto texture = ResourceManagers::GetInstance()->GetTexture("bg_main_menu");
+	auto shader = ResourceManagers::GetInstance()->GetShader("TextureShader");
 	
 	// background
-	auto shader = ResourceManagers::GetInstance()->GetShader("TextureShader");
+	auto texture = ResourceManagers::GetInstance()->GetTexture("credit");
 	m_BackGround = std::make_shared<Sprite2D>(model, shader, texture);
 	m_BackGround->Set2DPosition(screenWidth / 2, screenHeight / 2);
 	m_BackGround->SetSize(screenWidth, screenHeight);
@@ -34,26 +37,29 @@ void GSCredit::Init()
 	});
 	m_listButton.push_back(button);
 
-	// author text
-	shader = ResourceManagers::GetInstance()->GetShader("TextShader");
-	std::shared_ptr<Font> font = ResourceManagers::GetInstance()->GetFont("arialbd");
-	m_Text_gameName = std::make_shared<Text>(shader, font, "Tac gia: Nguyen Van Khoa", TEXT_COLOR::PURPLE, 1.0);
-	m_Text_gameName->Set2DPosition(Vector2(screenWidth / 2 - 140, 150));
+	if (isBgMusicOn)
+		creditSound = ResourceManagers::GetInstance()->PlaySound("credit", true);
 }
 
 void GSCredit::Exit()
 {
 	m_isPause = true;
+	if (isBgMusicOn)
+		ResourceManagers::GetInstance()->StopAllSound();
 }
 
 void GSCredit::Pause()
 {
 	m_isPause = true;
+	if (isBgMusicOn)
+		ResourceManagers::GetInstance()->StopAllSound();
 }
 
 void GSCredit::Resume()
 {
 	m_isPause = false;
+	if (isBgMusicOn)
+		ResourceManagers::GetInstance()->PlaySound("credit", true);
 }
 
 void GSCredit::HandleEvents()
@@ -93,6 +99,5 @@ void GSCredit::Draw()
 		{
 			it->Draw();
 		}
-		m_Text_gameName->Draw();
 	}
 }

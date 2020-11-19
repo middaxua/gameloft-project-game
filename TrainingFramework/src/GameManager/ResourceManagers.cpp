@@ -18,12 +18,13 @@ ResourceManagers::ResourceManagers()
 	m_FontPath = dataPath + "Fonts\\";
 	// sound
 	m_SoundsPath = dataPath + "Sounds\\";
-	m_Soloud = std::make_shared<SoLoud::Soloud>();
-	m_Soloud->init();
+	m_Soloud = SoLoud::Soloud();
+	m_Soloud.init();
 }
 
 ResourceManagers::~ResourceManagers()
 {
+	m_Soloud.deinit();
 }
 
 void ResourceManagers::AddShader(const std::string& name)
@@ -114,7 +115,7 @@ void ResourceManagers::AddSound(const std::string & name)
 	m_MapWave.insert({ name, wave });
 }
 
-void ResourceManagers::PlaySound(const std::string & name, bool loop)
+int ResourceManagers::PlaySound(const std::string & name, bool loop)
 {
 	std::shared_ptr<SoLoud::Wav> wave;
 	auto it = m_MapWave.find(name);
@@ -127,16 +128,34 @@ void ResourceManagers::PlaySound(const std::string & name, bool loop)
 		wave->load(wav.c_str());
 		m_MapWave.insert({ name, wave });
 	}
-	m_Soloud->play(*wave);
+	int h = m_Soloud.play(*wave);
+	m_Soloud.setLooping(h, loop);
+	return h;
 }
 
-void ResourceManagers::PauseSound(const std::string & name)
+void ResourceManagers::PauseAllSound(bool status)
 {
-	std::shared_ptr<SoLoud::Wav> wave;
-	auto it = m_MapWave.find(name);
-	if (it != m_MapWave.end())
-		wave = it->second;
-	m_Soloud->stopAudioSource(*wave);
+	m_Soloud.setPauseAll(status);
+}
+
+void ResourceManagers::PauseSound(int h, bool status)
+{
+	m_Soloud.setPause(h, status);
+}
+
+void ResourceManagers::StopAllSound()
+{
+	m_Soloud.stopAll();
+}
+
+float ResourceManagers::GetGlobalVolume()
+{
+	return m_Soloud.getGlobalVolume();
+}
+
+void ResourceManagers::SetGlobalVolume(float v)
+{
+	m_Soloud.setGlobalVolume(v);
 }
 
 std::shared_ptr<Shaders> ResourceManagers::GetShader(const std::string& name)

@@ -3,7 +3,10 @@
 extern int screenWidth; //need get on Graphic engine
 extern int screenHeight; //need get on Graphic engine
 
-bool isMusicOn = true;
+bool isBgMusicOn = true;
+bool isEfMusicOn = true;
+bool isTextFloatOn = false;
+int menuSound;
 
 GSMenu::GSMenu()
 {
@@ -45,8 +48,9 @@ void GSMenu::Init()
 	m_musicOnButton->Set2DPosition(screenWidth / 2 - 135, screenHeight - 60);
 	m_musicOnButton->SetSize(60, 60);
 	m_musicOnButton->SetOnClick([]() {
-		ResourceManagers::GetInstance()->PauseSound("menu");
-		isMusicOn = false;
+		ResourceManagers::GetInstance()->StopAllSound();
+		isBgMusicOn = false;
+		isEfMusicOn = false;
 	});
 
 	// mute music button
@@ -55,16 +59,18 @@ void GSMenu::Init()
 	m_musicOffButton->Set2DPosition(screenWidth / 2 - 135, screenHeight - 60);
 	m_musicOffButton->SetSize(60, 60);
 	m_musicOffButton->SetOnClick([]() {
-		ResourceManagers::GetInstance()->PlaySound("menu");
-		isMusicOn = true;
+		menuSound = ResourceManagers::GetInstance()->PlaySound("menu");
+		isBgMusicOn = true;
+		isEfMusicOn = true;
 	});
 
 	// setting button
-	texture = ResourceManagers::GetInstance()->GetTexture("button_credit");
+	texture = ResourceManagers::GetInstance()->GetTexture("button_setting");
 	button = std::make_shared<GameButton>(model, shader, texture);
 	button->Set2DPosition(screenWidth / 2 - 45, screenHeight - 60);
 	button->SetSize(60, 60);
 	button->SetOnClick([]() {
+		GameStateMachine::GetInstance()->PushState(StateTypes::STATE_Setting);
 	});
 	m_listButton.push_back(button);
 
@@ -101,28 +107,28 @@ void GSMenu::Init()
 	m_Text_gameName = std::make_shared< Text>(shader, font, "", TEXT_COLOR::GREEN, 1.25);
 	m_Text_gameName->Set2DPosition(Vector2(screenWidth / 2 - 130, 120));
 
-	ResourceManagers::GetInstance()->PlaySound("menu");
+	menuSound = ResourceManagers::GetInstance()->PlaySound("menu", true);
 }
 
 void GSMenu::Exit()
 {
 	m_isPause = true;
-	if (isMusicOn)
-		ResourceManagers::GetInstance()->PauseSound("menu");
+	if (isBgMusicOn)
+		ResourceManagers::GetInstance()->StopAllSound();
 }
 
 void GSMenu::Pause()
 {
 	m_isPause = true;
-	if (isMusicOn)
-		ResourceManagers::GetInstance()->PauseSound("menu");
+	if (isBgMusicOn)
+		ResourceManagers::GetInstance()->StopAllSound();
 }
 
 void GSMenu::Resume()
 {
 	m_isPause = false;
-	if (isMusicOn)
-		ResourceManagers::GetInstance()->PlaySound("menu");
+	if (isBgMusicOn)
+		ResourceManagers::GetInstance()->PlaySound("menu", true);
 }
 
 void GSMenu::HandleEvents()
@@ -141,7 +147,7 @@ void GSMenu::HandleTouchEvents(int x, int y, bool bIsPressed)
 		(it)->HandleTouchEvents(x, y, bIsPressed);
 		if ((it)->IsHandle()) break;
 	}
-	if (isMusicOn)
+	if (isBgMusicOn)
 		m_musicOnButton->HandleTouchEvents(x, y, bIsPressed);
 	else
 		m_musicOffButton->HandleTouchEvents(x, y, bIsPressed);
@@ -186,7 +192,7 @@ void GSMenu::Draw()
 		{
 			it->Draw();
 		}
-		if (isMusicOn)
+		if (isBgMusicOn)
 			m_musicOnButton->Draw();
 		else
 			m_musicOffButton->Draw();

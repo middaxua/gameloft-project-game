@@ -1,16 +1,11 @@
 #include "GSHeroSelecting.h"
-#include "SpriteAnimation.h"
-#include "GameButton.h"
-#include "Sprite2D.h"
-#include "Text.h"
 
 extern int screenWidth; //need get on Graphic engine
 extern int screenHeight; //need get on Graphic engine
-extern bool isMusicOn;
+extern bool isBgMusicOn;
 
 int idHero;
-int NUM_HEROES = 3;
-int NUM_STATES = 7;
+int heroSelectingSound;
 
 GSHeroSelecting::GSHeroSelecting()
 {
@@ -36,16 +31,16 @@ void GSHeroSelecting::Init()
 	m_BackGround2->SetSize(screenWidth, screenHeight);
 
 	// add 3 hero
-	std::string listHeroStates[7] = { "0", "1", "2", "3", "4", "5", "7" };
+	std::string listHeroStates[7] = { "idle", "walk", "run", "attack", "die", "hurt"};
 	std::string listHeroNames[3] = { "archer_", "icewizard_", "knight_" };
 	shader = ResourceManagers::GetInstance()->GetShader("Animation");
-	for (int i = 0; i < NUM_HEROES; ++i) {
-		for (int j = 0; j < NUM_STATES; ++j) {
-			std::string fileName = listHeroNames[i] + listHeroStates[j] + "_0";
+	for (int i = 0; i < NUM_HERO_TYPE; ++i) {
+		for (int j = 0; j < NUM_STATE; ++j) {
+			std::string fileName = listHeroNames[i] + listHeroStates[j];
 			texture = ResourceManagers::GetInstance()->GetTexture(fileName);
 			std::shared_ptr<SpriteAnimation> hero = std::make_shared<SpriteAnimation>(model, shader, texture, 10, 0.1f);
-			hero->Set2DPosition((i + 1) * (screenWidth - 3 * 136) / 4 + 68 + i * 136, 350);
-			hero->SetSize(136, 136);
+			hero->Set2DPosition((i + 1) * (screenWidth - 3 * 160) / 4 + 80 + i * 160, 400);
+			hero->SetSize(160, 160);
 			m_SpriteAnimation[i].push_back(hero);
 		}
 	}
@@ -54,8 +49,8 @@ void GSHeroSelecting::Init()
 	shader = ResourceManagers::GetInstance()->GetShader("TextureShader");
 	texture = ResourceManagers::GetInstance()->GetTexture("transparent");
 	std::shared_ptr<GameButton> button = std::make_shared<GameButton>(model, shader, texture);
-	button->Set2DPosition(1 * (screenWidth - 3 * 136) / 4 + 68 + 0 * 136, 350);
-	button->SetSize(136, 136);
+	button->Set2DPosition(1 * (screenWidth - 3 * 160) / 4 + 80 + 0 * 160, 400);
+	button->SetSize(160, 160);
 	button->SetOnClick([]() {
 		idHero = 0;
 		GameStateMachine::GetInstance()->PopState();
@@ -64,8 +59,8 @@ void GSHeroSelecting::Init()
 	m_listButton.push_back(button);
 
 	button = std::make_shared<GameButton>(model, shader, texture);
-	button->Set2DPosition(2 * (screenWidth - 3 * 136) / 4 + 68 + 1 * 136, 350);
-	button->SetSize(136, 136);
+	button->Set2DPosition(2 * (screenWidth - 3 * 160) / 4 + 80 + 1 * 160, 400);
+	button->SetSize(160, 160);
 	button->SetOnClick([]() {
 		idHero = 1;
 		GameStateMachine::GetInstance()->PopState();
@@ -74,8 +69,8 @@ void GSHeroSelecting::Init()
 	m_listButton.push_back(button);
 
 	button = std::make_shared<GameButton>(model, shader, texture);
-	button->Set2DPosition(3 * (screenWidth - 3 * 136) / 4 + 68 + 2 * 136, 350);
-	button->SetSize(136, 136);
+	button->Set2DPosition(3 * (screenWidth - 3 * 160) / 4 + 80 + 2 * 160, 400);
+	button->SetSize(160, 160);
 	button->SetOnClick([]() {
 		idHero = 2;
 		GameStateMachine::GetInstance()->PopState();
@@ -99,29 +94,29 @@ void GSHeroSelecting::Init()
 	m_Text_gameName = std::make_shared<Text>(shader, font, "SELECT ONE HERO", TEXT_COLOR::RED, 1.25);
 	m_Text_gameName->Set2DPosition(Vector2(screenWidth / 2 - 130, 150));
 
-	if (isMusicOn)
-		ResourceManagers::GetInstance()->PlaySound("select_hero");
+	if (isBgMusicOn)
+		heroSelectingSound = ResourceManagers::GetInstance()->PlaySound("select_hero", true);
 }
 
 void GSHeroSelecting::Exit()
 {
 	m_isPause = true;
-	if (isMusicOn)
-		ResourceManagers::GetInstance()->PauseSound("select_hero");
+	if (isBgMusicOn)
+		ResourceManagers::GetInstance()->StopAllSound();
 }
 
 void GSHeroSelecting::Pause()
 {
 	m_isPause = true;
-	if (isMusicOn)
-		ResourceManagers::GetInstance()->PauseSound("select_hero");
+	if (isBgMusicOn)
+		ResourceManagers::GetInstance()->StopAllSound();
 }
 
 void GSHeroSelecting::Resume()
 {
 	m_isPause = false;
-	if (isMusicOn)
-		ResourceManagers::GetInstance()->PlaySound("select_hero");
+	if (isBgMusicOn)
+		ResourceManagers::GetInstance()->PlaySound("select_hero", true);
 }
 
 void GSHeroSelecting::HandleEvents()
@@ -172,6 +167,10 @@ void GSHeroSelecting::Update(float deltaTime)
 		}
 
 		// hero anim
+		for (auto hero : m_SpriteAnimation)
+		{
+			hero[idHero]->Update(deltaTime);
+		}
 		if (m_SpriteAnimation[0][idHero]->IsLastFrame())
 		{
 			for (auto hero : m_SpriteAnimation)
@@ -179,11 +178,7 @@ void GSHeroSelecting::Update(float deltaTime)
 				hero[idHero]->ResetCurrentTime();
 				hero[idHero]->SetCurrentFrame(0);
 			}
-			idHero = (idHero + 1) % NUM_STATES;
-		}
-		for (auto hero : m_SpriteAnimation)
-		{
-			hero[idHero]->Update(deltaTime);
+			idHero = (idHero + 1) % NUM_STATE;
 		}
 	}
 }

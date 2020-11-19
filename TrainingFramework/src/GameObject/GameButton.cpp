@@ -43,12 +43,12 @@ bool GameButton::IsClicked(GLint x, GLint y, bool bIsPressed)
 	}
 }
 
-bool GameButton::IsEnable()
-{
-	return m_isEnable;
-}
-
-void GameButton::SetEnable(bool e)
-{
-	m_isEnable = e;
-}
+//bool GameButton::IsEnable()
+//{
+//	return m_isEnable;
+//}
+//
+//void GameButton::SetEnable(bool e)
+//{
+//	m_isEnable = e;
+//}

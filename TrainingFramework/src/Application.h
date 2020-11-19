@@ -2,7 +2,6 @@
 #include "Singleton.h"
 #include "GameConfig.h"
 
-
 class Application : public CSingleton<Application>
 {
 public:
